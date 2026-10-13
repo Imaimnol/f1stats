@@ -1,7 +1,114 @@
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  favorites FavoriteDriver[]
+}
+
+model Driver {
+  id          String   @id @default(cuid())
+  externalId  String   @unique
+  firstName   String
+  lastName    String
+  nationality String?
+  permanentNumber Int?
+  code        String?
+  dateOfBirth DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  results   RaceResult[]
+  favorites FavoriteDriver[]
+}
+
+model Constructor {
+  id          String   @id @default(cuid())
+  externalId  String   @unique
+  name        String
+  nationality String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  results RaceResult[]
+}
+
+model Circuit {
+  id         String   @id @default(cuid())
+  externalId String   @unique
+  name       String
+  locality   String?
+  country    String?
+  latitude   Float?
+  longitude  Float?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  races Race[]
+}
+
+model Race {
+  id        String   @id @default(cuid())
+  season    Int
+  round     Int
+  name      String
+  date      DateTime
+  circuitId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  circuit Circuit       @relation(fields: [circuitId], references: [id])
+  results RaceResult[]
+
+  @@unique([season, round])
+}
+
+model RaceResult {
+  id            String   @id @default(cuid())
+  raceId        String
+  driverId      String
+  constructorId String
+  position      Int?
+  grid          Int?
+  points        Float    @default(0)
+  laps          Int?
+  status        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  race        Race        @relation(fields: [raceId], references: [id], onDelete: Cascade)
+  driver      Driver      @relation(fields: [driverId], references: [id])
+  constructor Constructor @relation(fields: [constructorId], references: [id])
+
+  @@unique([raceId, driverId])
+}
+
+model FavoriteDriver {
+  id        String   @id @default(cuid())
+  userId    String
+  driverId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, driverId])
 }
