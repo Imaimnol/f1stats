@@ -1,8 +1,10 @@
-
 import { NextResponse } from "next/server";
+import { connection } from "next/server";
 import { getOpenF1 } from "@/lib/openf1";
 
 export async function GET() {
+  await connection();
+
   try {
     const meetings = await getOpenF1<
       Array<{
@@ -28,6 +30,10 @@ export async function GET() {
       {
         success: false,
         message: "No se pudo consultar OpenF1",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Error desconocido",
       },
       { status: 502 }
     );

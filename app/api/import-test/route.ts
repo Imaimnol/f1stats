@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextResponse, connection } from "next/server";
 import { importRaceBySessionKey } from "@/lib/services/f1-import";
 
 export async function GET() {
+  await connection();
+
   try {
     const result = await importRaceBySessionKey(9141);
 
-    return NextResponse.json(result);
+return NextResponse.json(result);
   } catch (error) {
     console.error("Error importando carrera:", error);
 
