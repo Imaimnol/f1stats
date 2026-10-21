@@ -20,6 +20,14 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Estadísticas de temporada
+
+La ruta `/estadisticas` muestra las clasificaciones de pilotos y constructores
+de la temporada actual a partir de los resultados guardados en la base de datos.
+Incluye puntos, victorias, podios y carreras, con desempate por posiciones de
+finalización. Si todavía no hay resultados importados para la temporada, muestra
+un estado vacío en lugar de una tabla sin datos.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
