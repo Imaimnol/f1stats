@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { getSeasonStandings } from "@/lib/services/standings";
+import {
+  getAvailableSeasons,
+  getSeasonStandings,
+} from "@/lib/services/standings";
 
 const pointsFormatter = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 2,
@@ -67,10 +70,25 @@ function StandingsTable({
   );
 }
 
-export default async function StatisticsPage() {
+export default async function StatisticsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ year?: string | string[] }>;
+}) {
   await connection();
 
-  const season = new Date().getFullYear();
+  const currentSeason = new Date().getFullYear();
+  const [query, availableSeasons] = await Promise.all([
+    searchParams,
+    getAvailableSeasons(currentSeason),
+  ]);
+  const requestedSeason =
+    typeof query.year === "string" ? Number(query.year) : currentSeason;
+  const hasInvalidSeason =
+    query.year !== undefined &&
+    (typeof query.year !== "string" ||
+      !availableSeasons.includes(requestedSeason));
+  const season = hasInvalidSeason ? currentSeason : requestedSeason;
   const standings = await getSeasonStandings(season);
 
   return (
@@ -96,11 +114,50 @@ export default async function StatisticsPage() {
                 importados.
               </p>
             </div>
-            <span className="w-fit rounded-full border border-red-400/40 bg-red-400/10 px-4 py-2 text-sm font-semibold text-red-200">
-              Temporada {season}
-            </span>
+            <form
+              action="/estadisticas"
+              className="flex flex-wrap items-end gap-3"
+              method="get"
+            >
+              <div>
+                <label
+                  className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400"
+                  htmlFor="season"
+                >
+                  Temporada
+                </label>
+                <select
+                  className="rounded-full border border-white/15 bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                  defaultValue={season}
+                  id="season"
+                  name="year"
+                >
+                  {availableSeasons.map((availableSeason) => (
+                    <option key={availableSeason} value={availableSeason}>
+                      {availableSeason}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-400"
+                type="submit"
+              >
+                Ver temporada
+              </button>
+            </form>
           </div>
         </header>
+
+        {hasInvalidSeason && (
+          <p
+            className="mb-6 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200"
+            role="alert"
+          >
+            La temporada solicitada no está disponible. Elegí una de las
+            temporadas con resultados importados.
+          </p>
+        )}
 
         {standings.races === 0 ? (
           <section className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
