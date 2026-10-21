@@ -40,6 +40,25 @@ function rankStandings(rows: Standing[]): Omit<Standing, "finishes">[] {
     .map(({ finishes, ...row }) => row);
 }
 
+export async function getAvailableSeasons(currentSeason: number) {
+  const races = await prisma.race.findMany({
+    where: {
+      results: { some: {} },
+    },
+    select: {
+      season: true,
+    },
+    distinct: ["season"],
+    orderBy: {
+      season: "desc",
+    },
+  });
+
+  return [...new Set([currentSeason, ...races.map((race) => race.season)])].sort(
+    (left, right) => right - left
+  );
+}
+
 export async function getSeasonStandings(season: number) {
   if (!Number.isInteger(season)) {
     throw new Error("El año de temporada debe ser un número entero");
@@ -62,7 +81,7 @@ export async function getSeasonStandings(season: number) {
           nationality: true,
         },
       },
-      constructor: {
+      team: {
         select: {
           id: true,
           name: true,
@@ -104,10 +123,10 @@ export async function getSeasonStandings(season: number) {
     }
     drivers.set(driver.id, driver);
 
-    const constructor = constructors.get(result.constructor.id) ?? {
-      id: result.constructor.id,
-      name: result.constructor.name,
-      detail: result.constructor.nationality,
+    const constructor = constructors.get(result.team.id) ?? {
+      id: result.team.id,
+      name: result.team.name,
+      detail: result.team.nationality,
       points: 0,
       wins: 0,
       podiums: 0,

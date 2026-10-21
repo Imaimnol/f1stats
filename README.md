@@ -25,8 +25,9 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 La ruta `/estadisticas` muestra las clasificaciones de pilotos y constructores
 de la temporada actual a partir de los resultados guardados en la base de datos.
 Incluye puntos, victorias, podios y carreras, con desempate por posiciones de
-finalización. Si todavía no hay resultados importados para la temporada, muestra
-un estado vacío en lugar de una tabla sin datos.
+finalización. Permite elegir entre la temporada actual y las temporadas con
+resultados importados. Si todavía no hay resultados para la temporada actual,
+muestra un estado vacío en lugar de una tabla sin datos.
 
 ## Learn More
 

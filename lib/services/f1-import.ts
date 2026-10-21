@@ -288,7 +288,7 @@ export async function importRaceBySessionKey(
           },
         },
       }),
-      prisma.constructor.findMany({
+      prisma.team.findMany({
         where: {
           externalId: {
             in: [...constructorNamesByExternalId.keys()],
@@ -433,7 +433,7 @@ export async function importRaceBySessionKey(
     const constructorExternalId =
       `openf1-team-${normalizeExternalId(teamName)}`;
 
-    const constructor = await prisma.constructor.upsert({
+    const constructor = await prisma.team.upsert({
       where: {
         externalId: constructorExternalId,
       },
