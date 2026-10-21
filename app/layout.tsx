@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "F1 Stats | Calendario de carreras",
+  title: "F1 Stats | Fórmula 1",
   description:
-    "Consulta el calendario de carreras de Fórmula 1 de la temporada actual.",
+    "Consulta el calendario y las posiciones de Fórmula 1 de la temporada actual.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
