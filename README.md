@@ -28,6 +28,8 @@ Incluye puntos, victorias, podios y carreras, con desempate por posiciones de
 finalización. Permite elegir entre la temporada actual y las temporadas con
 resultados importados. Si todavía no hay resultados para la temporada actual,
 muestra un estado vacío en lugar de una tabla sin datos.
+Desde las temporadas con resultados importados, también permite abrir la
+clasificación detallada de cada carrera.
 
 ## Learn More
 
