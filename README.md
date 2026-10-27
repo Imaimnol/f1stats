@@ -31,6 +31,9 @@ muestra un estado vacío en lugar de una tabla sin datos.
 Desde las temporadas con resultados importados, también permite abrir la
 clasificación detallada de cada carrera.
 
+Los nombres de los pilotos enlazan a `/pilotos/[driverId]`, donde se muestran
+sus estadísticas de trayectoria y los resultados de las carreras importadas.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

@@ -28,9 +28,11 @@ type Standing = {
 function StandingsTable({
   title,
   rows,
+  driverLinks = false,
 }: {
   title: string;
   rows: Standing[];
+  driverLinks?: boolean;
 }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
@@ -56,7 +58,16 @@ function StandingsTable({
                   {index + 1}
                 </td>
                 <td className="px-5 py-4">
-                  <p className="font-semibold text-white">{row.name}</p>
+                  {driverLinks ? (
+                    <Link
+                      className="font-semibold text-white transition-colors hover:text-red-300"
+                      href={`/pilotos/${row.id}`}
+                    >
+                      {row.name}
+                    </Link>
+                  ) : (
+                    <p className="font-semibold text-white">{row.name}</p>
+                  )}
                   {row.detail && (
                     <p className="mt-1 text-xs text-slate-400">{row.detail}</p>
                   )}
@@ -188,7 +199,11 @@ export default async function StatisticsPage({
               {standings.races === 1 ? "carrera importada" : "carreras importadas"}
             </p>
             <div className="space-y-6">
-              <StandingsTable title="Pilotos" rows={standings.drivers} />
+              <StandingsTable
+                title="Pilotos"
+                rows={standings.drivers}
+                driverLinks
+              />
               <StandingsTable
                 title="Constructores"
                 rows={standings.constructors}
