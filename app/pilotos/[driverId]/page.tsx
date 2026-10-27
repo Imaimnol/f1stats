@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { fetchApiJson } from "@/lib/services/app-api";
+import { connection } from "next/server";
+import { getDriverProfile } from "@/lib/services/drivers";
 
 const pointsFormatter = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 2,
@@ -20,33 +21,9 @@ export default async function DriverPage({
 }: {
   params: Promise<{ driverId: string }>;
 }) {
+  await connection();
   const { driverId } = await params;
-  const driver = await fetchApiJson<{
-    firstName: string;
-    lastName: string;
-    code: string | null;
-    permanentNumber: number | null;
-    nationality: string | null;
-    results: Array<{
-      position: number | null;
-      points: number;
-      laps: number | null;
-      status: string | null;
-      team: { name: string };
-      race: {
-        season: number;
-        round: number;
-        name: string;
-        circuit: { name: string };
-      };
-    }>;
-    stats: {
-      races: number;
-      points: number;
-      wins: number;
-      podiums: number;
-    };
-  }>(`/api/drivers/${driverId}`).catch(() => null);
+  const driver = await getDriverProfile(driverId);
 
   if (!driver) {
     notFound();

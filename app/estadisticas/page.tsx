@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { fetchApiJson } from "@/lib/services/app-api";
+import {
+  getAvailableSeasons,
+  getSeasonStandings,
+} from "@/lib/services/standings";
 
 const seasonDataMinYear = 2023;
 
@@ -115,10 +118,7 @@ export default async function StatisticsPage({
   const currentSeason = new Date().getFullYear();
   const query = await searchParams;
 
-  const availableSeasonsResponse = await fetchApiJson<AvailableSeasonsResponse>(
-    `/api/season-data?currentSeason=${currentSeason}`
-  );
-  const availableSeasons = availableSeasonsResponse.seasons.filter(
+  const availableSeasons = (await getAvailableSeasons(currentSeason)).filter(
     (season) => season >= seasonDataMinYear
   );
 
@@ -130,9 +130,7 @@ export default async function StatisticsPage({
       !availableSeasons.includes(requestedSeason));
   const season = hasInvalidSeason ? currentSeason : requestedSeason;
 
-  const standings = await fetchApiJson<SeasonStandingsResponse>(
-    `/api/season-data/${season}`
-  );
+  const standings = await getSeasonStandings(season);
 
   return (
     <main className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14">
