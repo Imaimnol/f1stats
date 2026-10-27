@@ -31,13 +31,22 @@ function compareStandings(left: Standing, right: Standing) {
 }
 
 function rankStandings(rows: Standing[]): Omit<Standing, "finishes">[] {
-  return rows
+  const rankedRows = rows
     .map((row) => ({
       ...row,
       finishes: [...row.finishes].sort((left, right) => left - right),
     }))
-    .sort(compareStandings)
-    .map(({ finishes, ...row }) => row);
+    .sort(compareStandings);
+
+  return rankedRows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    detail: row.detail,
+    points: row.points,
+    wins: row.wins,
+    podiums: row.podiums,
+    starts: row.starts,
+  }));
 }
 
 export async function getAvailableSeasons(currentSeason: number) {
