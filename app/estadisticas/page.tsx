@@ -9,6 +9,12 @@ const pointsFormatter = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 2,
 });
 
+const raceDateFormatter = new Intl.DateTimeFormat("es-AR", {
+  day: "numeric",
+  month: "long",
+  timeZone: "UTC",
+});
+
 type Standing = {
   id: string;
   name: string;
@@ -22,9 +28,11 @@ type Standing = {
 function StandingsTable({
   title,
   rows,
+  driverLinks = false,
 }: {
   title: string;
   rows: Standing[];
+  driverLinks?: boolean;
 }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
@@ -50,7 +58,16 @@ function StandingsTable({
                   {index + 1}
                 </td>
                 <td className="px-5 py-4">
-                  <p className="font-semibold text-white">{row.name}</p>
+                  {driverLinks ? (
+                    <Link
+                      className="font-semibold text-white transition-colors hover:text-red-300"
+                      href={`/pilotos/${row.id}`}
+                    >
+                      {row.name}
+                    </Link>
+                  ) : (
+                    <p className="font-semibold text-white">{row.name}</p>
+                  )}
                   {row.detail && (
                     <p className="mt-1 text-xs text-slate-400">{row.detail}</p>
                   )}
@@ -182,12 +199,40 @@ export default async function StatisticsPage({
               {standings.races === 1 ? "carrera importada" : "carreras importadas"}
             </p>
             <div className="space-y-6">
-              <StandingsTable title="Pilotos" rows={standings.drivers} />
+              <StandingsTable
+                title="Pilotos"
+                rows={standings.drivers}
+                driverLinks
+              />
               <StandingsTable
                 title="Constructores"
                 rows={standings.constructors}
               />
             </div>
+            <section className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04]">
+              <div className="border-b border-white/10 px-5 py-4">
+                <h2 className="text-lg font-semibold">
+                  Carreras con resultados
+                </h2>
+              </div>
+              <ol className="divide-y divide-white/10">
+                {standings.raceDetails.map((race) => (
+                  <li key={race.round}>
+                    <Link
+                      href={`/resultados/${season}/${race.round}`}
+                      className="flex flex-col gap-1 px-5 py-4 transition-colors hover:bg-white/[0.04] sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <span className="font-semibold text-white">
+                        Ronda {race.round}: {race.name}
+                      </span>
+                      <span className="text-sm text-slate-400">
+                        {race.circuit.name} · {raceDateFormatter.format(race.date)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            </section>
           </>
         )}
         <p className="mt-8 text-center text-xs text-slate-500">

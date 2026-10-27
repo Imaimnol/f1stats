@@ -72,6 +72,18 @@ export async function getSeasonStandings(season: number) {
       raceId: true,
       position: true,
       points: true,
+      race: {
+        select: {
+          round: true,
+          name: true,
+          date: true,
+          circuit: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
       driver: {
         select: {
           id: true,
@@ -94,10 +106,20 @@ export async function getSeasonStandings(season: number) {
   const drivers = new Map<string, Standing>();
   const constructors = new Map<string, Standing>();
   const races = new Set<string>();
+  const raceDetails = new Map<
+    string,
+    {
+      round: number;
+      name: string;
+      date: Date;
+      circuit: { name: string };
+    }
+  >();
   const constructorRaces = new Map<string, Set<string>>();
 
   for (const result of results) {
     races.add(result.raceId);
+    raceDetails.set(result.raceId, result.race);
 
     const driver = drivers.get(result.driver.id) ?? {
       id: result.driver.id,
@@ -155,6 +177,9 @@ export async function getSeasonStandings(season: number) {
   return {
     season,
     races: races.size,
+    raceDetails: [...raceDetails.values()].sort(
+      (left, right) => left.round - right.round
+    ),
     drivers: rankStandings([...drivers.values()]),
     constructors: rankStandings([...constructors.values()]),
   };
