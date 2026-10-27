@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
-import { getRaceResults } from "@/lib/services/race-results";
+import { fetchApiJson } from "@/lib/services/app-api";
 
 const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   day: "numeric",
@@ -48,7 +48,33 @@ export default async function RaceResultsPage({
     notFound();
   }
 
-  const race = await getRaceResults(season, round);
+  const race = await fetchApiJson<{
+    season: number;
+    round: number;
+    name: string;
+    date: string;
+    circuit: {
+      name: string;
+      locality: string | null;
+      country: string | null;
+    };
+    results: Array<{
+      position: number | null;
+      grid: number | null;
+      points: number;
+      laps: number | null;
+      status: string | null;
+      driver: {
+        firstName: string;
+        lastName: string;
+        code: string | null;
+      };
+      team: {
+        name: string;
+      };
+    }>;
+  }>(`/api/season-data/${season}/${round}`).catch(() => null);
+
   if (!race || race.results.length === 0) {
     notFound();
   }
@@ -75,7 +101,7 @@ export default async function RaceResultsPage({
               {race.circuit.locality ? ` · ${race.circuit.locality}` : ""}
               {race.circuit.country ? `, ${race.circuit.country}` : ""}
               {" · "}
-              {dateFormatter.format(race.date)}
+              {dateFormatter.format(new Date(race.date))}
             </p>
           </div>
         </header>

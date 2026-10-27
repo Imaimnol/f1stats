@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import {
-  getAvailableSeasons,
-  getSeasonStandings,
-} from "@/lib/services/standings";
+import { fetchApiJson } from "@/lib/services/app-api";
+
+const seasonDataMinYear = 2023;
 
 const pointsFormatter = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 2,
@@ -23,6 +22,25 @@ type Standing = {
   wins: number;
   podiums: number;
   starts: number;
+};
+
+type AvailableSeasonsResponse = {
+  seasons: number[];
+};
+
+type SeasonStandingsResponse = {
+  season: number;
+  races: number;
+  drivers: Standing[];
+  constructors: Standing[];
+  raceDetails: Array<{
+    round: number;
+    name: string;
+    date: string;
+    circuit: {
+      name: string;
+    };
+  }>;
 };
 
 function StandingsTable({
@@ -95,10 +113,15 @@ export default async function StatisticsPage({
   await connection();
 
   const currentSeason = new Date().getFullYear();
-  const [query, availableSeasons] = await Promise.all([
-    searchParams,
-    getAvailableSeasons(currentSeason),
-  ]);
+  const query = await searchParams;
+
+  const availableSeasonsResponse = await fetchApiJson<AvailableSeasonsResponse>(
+    `/api/season-data?currentSeason=${currentSeason}`
+  );
+  const availableSeasons = availableSeasonsResponse.seasons.filter(
+    (season) => season >= seasonDataMinYear
+  );
+
   const requestedSeason =
     typeof query.year === "string" ? Number(query.year) : currentSeason;
   const hasInvalidSeason =
@@ -106,7 +129,10 @@ export default async function StatisticsPage({
     (typeof query.year !== "string" ||
       !availableSeasons.includes(requestedSeason));
   const season = hasInvalidSeason ? currentSeason : requestedSeason;
-  const standings = await getSeasonStandings(season);
+
+  const standings = await fetchApiJson<SeasonStandingsResponse>(
+    `/api/season-data/${season}`
+  );
 
   return (
     <main className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14">
@@ -226,7 +252,7 @@ export default async function StatisticsPage({
                         Ronda {race.round}: {race.name}
                       </span>
                       <span className="text-sm text-slate-400">
-                        {race.circuit.name} · {raceDateFormatter.format(race.date)}
+                        {race.circuit.name} · {raceDateFormatter.format(new Date(race.date))}
                       </span>
                     </Link>
                   </li>

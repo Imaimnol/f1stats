@@ -8,6 +8,20 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   timeZone: "UTC",
 });
 
+type CalendarResponse = {
+  season: number;
+  races: Array<{
+    round: number;
+    sessionKey: number;
+    meetingKey: number;
+    circuitKey: number;
+    dateStart: string;
+    circuitShortName: string;
+    countryName: string;
+    location: string;
+  }>;
+};
+
 export default async function Home() {
   await connection();
 
