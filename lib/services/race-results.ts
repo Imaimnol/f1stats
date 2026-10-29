@@ -2,20 +2,26 @@ import { prisma } from "@/lib/prisma";
 
 export async function getSeasonRoundsWithResults(season: number) {
   if (!Number.isInteger(season) || season < 1950) {
-    throw new Error("La temporada debe ser un aÃ±o vÃ¡lido");
+    throw new Error("La temporada debe ser un año válido");
   }
 
-  const races = await prisma.race.findMany({
+  const rounds = await prisma.race.findMany({
     where: {
       season,
-      results: { some: {} },
+      results: {
+        some: {},
+      },
     },
     select: {
       round: true,
     },
+    distinct: ["round"],
+    orderBy: {
+      round: "asc",
+    },
   });
 
-  return races.map((race) => race.round);
+  return new Set(rounds.map((race) => race.round));
 }
 
 export async function getRaceResults(season: number, round: number) {
@@ -25,7 +31,7 @@ export async function getRaceResults(season: number, round: number) {
     season < 1950 ||
     round < 1
   ) {
-    throw new Error("La temporada y la ronda deben ser valores vÃ¡lidos");
+    throw new Error("La temporada y la ronda deben ser valores válidos");
   }
 
   return prisma.race.findUnique({
