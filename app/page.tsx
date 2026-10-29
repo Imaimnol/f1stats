@@ -54,7 +54,7 @@ export default async function Home({
           </h1>
           <p className="mt-3 leading-7 text-slate-300">
             No logramos consultar los datos de OpenF1. Intenta recargar la
-            página en unos momentos.
+            pÃ¡gina en unos momentos.
           </p>
           <form action="/" method="get" className="mt-6">
             <button
@@ -125,17 +125,17 @@ export default async function Home({
             className="mb-6 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200"
             role="alert"
           >
-            La temporada solicitada no es válida. Elegí un año entre {firstAvailableSeason} y {currentYear}.
+            La temporada solicitada no es vÃ¡lida. ElegÃ­ un aÃ±o entre {firstAvailableSeason} y {currentYear}.
           </p>
         )}
 
         {calendar.races.length === 0 ? (
           <section className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
             <h2 className="text-xl font-semibold">
-              Calendario todavía no disponible
+              Calendario todavï¿½a no disponible
             </h2>
             <p className="mt-2 text-slate-300">
-              OpenF1 aún no publicó carreras para la temporada {calendar.season}.
+              OpenF1 aÃºn no publicÃ³ carreras para la temporada {calendar.season}.
             </p>
           </section>
         ) : (
@@ -187,7 +187,7 @@ export default async function Home({
                         </Link>
                       ) : (
                         <p className="mt-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
-                          Resultados todavía no disponibles
+                          Resultados todavÃ­a no disponibles
                         </p>
                       )}
                     </div>
