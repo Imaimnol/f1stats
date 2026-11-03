@@ -3,6 +3,32 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+function pickString(value: FormDataEntryValue | null | undefined) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+async function validateExistingId(
+  model: "driver" | "team" | "circuit",
+  id: string | null | undefined
+) {
+  if (!id) {
+    return null;
+  }
+
+  if (model === "driver") {
+    const driver = await prisma.driver.findUnique({ where: { id }, select: { id: true } });
+    return driver ? id : null;
+  }
+
+  if (model === "team") {
+    const team = await prisma.team.findUnique({ where: { id }, select: { id: true } });
+    return team ? id : null;
+  }
+
+  const circuit = await prisma.circuit.findUnique({ where: { id }, select: { id: true } });
+  return circuit ? id : null;
+}
+
 export async function GET() {
   const user = await getCurrentUser();
 
@@ -13,19 +39,25 @@ export async function GET() {
     );
   }
 
-  const favorites = await prisma.favoriteDriver.findMany({
-    where: { userId: user.id },
+  const profileUser = await prisma.user.findUnique({
+    where: { id: user.id },
     select: {
-      driverId: true,
-    },
-    orderBy: {
-      createdAt: "asc",
+      favoriteDriverId: true,
+      favoriteTeamId: true,
+      favoriteCircuitId: true,
+      favorites: {
+        select: { driverId: true },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 
   return NextResponse.json({
     enabled: true,
-    favoriteDriverIds: favorites.map((favorite) => favorite.driverId),
+    favoriteDriverId: profileUser?.favoriteDriverId ?? null,
+    favoriteTeamId: profileUser?.favoriteTeamId ?? null,
+    favoriteCircuitId: profileUser?.favoriteCircuitId ?? null,
+    favoriteDriverIds: profileUser?.favorites.map((favorite) => favorite.driverId) ?? [],
   });
 }
 
@@ -34,61 +66,111 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json(
-      { error: "Debés iniciar sesión para guardar favoritos." },
+      { error: "Debés iniciar sesión para guardar tus preferencias." },
       { status: 401 }
     );
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "El cuerpo de la solicitud debe ser JSON válido." },
-      { status: 400 }
-    );
+  let formData: FormData | null = null;
+  let payload: Record<string, unknown> | null = null;
+
+  const isFormRequest = request.headers.get("content-type")?.includes("multipart/form-data") || request.headers.get("content-type")?.includes("application/x-www-form-urlencoded");
+
+  if (isFormRequest) {
+    formData = await request.formData();
+  } else {
+    try {
+      payload = (await request.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json(
+        { error: "El cuerpo de la solicitud debe ser JSON o formulario válido." },
+        { status: 400 }
+      );
+    }
   }
 
-  if (
-    typeof body !== "object" ||
-    body === null ||
-    !("driverId" in body) ||
-    typeof body.driverId !== "string" ||
-    body.driverId.length === 0
-  ) {
-    return NextResponse.json(
-      { error: "Debés indicar un piloto válido." },
-      { status: 400 }
-    );
-  }
+  const driverId =
+    formData !== null
+      ? pickString(formData.get("favoriteDriverId")) || pickString(formData.get("driverId"))
+      : typeof payload?.favoriteDriverId === "string"
+        ? payload.favoriteDriverId
+        : typeof payload?.driverId === "string"
+          ? payload.driverId
+          : null;
 
-  const driver = await prisma.driver.findUnique({
-    where: { id: body.driverId },
-    select: { id: true },
+  const teamId =
+    formData !== null
+      ? pickString(formData.get("favoriteTeamId"))
+      : typeof payload?.favoriteTeamId === "string"
+        ? payload.favoriteTeamId
+        : null;
+
+  const circuitId =
+    formData !== null
+      ? pickString(formData.get("favoriteCircuitId"))
+      : typeof payload?.favoriteCircuitId === "string"
+        ? payload.favoriteCircuitId
+        : null;
+
+  const nextDriverId = await validateExistingId("driver", driverId || null);
+  const nextTeamId = await validateExistingId("team", teamId || null);
+  const nextCircuitId = await validateExistingId("circuit", circuitId || null);
+
+  const currentUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: {
+      id: true,
+      favoriteDriverId: true,
+      favoriteTeamId: true,
+      favoriteCircuitId: true,
+    },
   });
 
-  if (!driver) {
-    return NextResponse.json(
-      { error: "No se encontró el piloto solicitado." },
-      { status: 404 }
-    );
+  if (!currentUser) {
+    return NextResponse.json({ error: "Usuario no encontrado." }, { status: 404 });
   }
 
-  await prisma.favoriteDriver.upsert({
-    where: {
-      userId_driverId: {
-        userId: user.id,
-        driverId: driver.id,
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      favoriteDriverId: nextDriverId ?? currentUser.favoriteDriverId ?? null,
+      favoriteTeamId: nextTeamId ?? currentUser.favoriteTeamId ?? null,
+      favoriteCircuitId: nextCircuitId ?? currentUser.favoriteCircuitId ?? null,
+    },
+    select: {
+      id: true,
+      favoriteDriverId: true,
+      favoriteTeamId: true,
+      favoriteCircuitId: true,
+    },
+  });
+
+  if (driverId && nextDriverId) {
+    await prisma.favoriteDriver.upsert({
+      where: {
+        userId_driverId: {
+          userId: user.id,
+          driverId: nextDriverId,
+        },
       },
-    },
-    create: {
-      userId: user.id,
-      driverId: driver.id,
-    },
-    update: {},
-  });
+      create: {
+        userId: user.id,
+        driverId: nextDriverId,
+      },
+      update: {},
+    });
+  }
 
-  return NextResponse.json({ success: true, favorite: true });
+  if (isFormRequest) {
+    return NextResponse.redirect(new URL("/perfil", request.url));
+  }
+
+  return NextResponse.json({
+    success: true,
+    favoriteDriverId: updatedUser.favoriteDriverId,
+    favoriteTeamId: updatedUser.favoriteTeamId,
+    favoriteCircuitId: updatedUser.favoriteCircuitId,
+  });
 }
 
 export async function DELETE(request: Request) {
@@ -101,9 +183,9 @@ export async function DELETE(request: Request) {
     );
   }
 
-  let body: unknown;
+  let payload: Record<string, unknown> | null = null;
   try {
-    body = await request.json();
+    payload = (await request.json()) as Record<string, unknown>;
   } catch {
     return NextResponse.json(
       { error: "El cuerpo de la solicitud debe ser JSON válido." },
@@ -112,24 +194,16 @@ export async function DELETE(request: Request) {
   }
 
   if (
-    typeof body !== "object" ||
-    body === null ||
-    !("driverId" in body) ||
-    typeof body.driverId !== "string" ||
-    body.driverId.length === 0
+    typeof payload?.driverId === "string" &&
+    payload.driverId.length > 0
   ) {
-    return NextResponse.json(
-      { error: "Debés indicar un piloto válido." },
-      { status: 400 }
-    );
+    await prisma.favoriteDriver.deleteMany({
+      where: {
+        userId: user.id,
+        driverId: payload.driverId,
+      },
+    });
   }
-
-  await prisma.favoriteDriver.deleteMany({
-    where: {
-      userId: user.id,
-      driverId: body.driverId,
-    },
-  });
 
   return NextResponse.json({ success: true, favorite: false });
 }
