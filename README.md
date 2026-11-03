@@ -22,17 +22,27 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 ## Estadísticas de temporada
 
-La ruta `/estadisticas` muestra las clasificaciones de pilotos y constructores
-de la temporada actual a partir de los resultados guardados en la base de datos.
+El calendario y la ruta `/estadisticas` permiten consultar temporadas desde
+2023. La aplicación obtiene el calendario de OpenF1 y muestra las clasificaciones
+de pilotos y constructores usando los resultados guardados en la base de datos.
 Incluye puntos, victorias, podios y carreras, con desempate por posiciones de
-finalización. Permite elegir entre la temporada actual y las temporadas con
-resultados importados. Si todavía no hay resultados para la temporada actual,
-muestra un estado vacío en lugar de una tabla sin datos.
-Desde las temporadas con resultados importados, también permite abrir la
-clasificación detallada de cada carrera.
+finalización.
 
-Los nombres de los pilotos enlazan a `/pilotos/[driverId]`, donde se muestran
-sus estadísticas de trayectoria y los resultados de las carreras importadas.
+Si una temporada no tiene resultados locales, la aplicación intenta importarlos
+desde OpenF1 antes de mostrar la información. Los resultados disponibles quedan
+guardados en la base local; las carreras futuras o sin resultados publicados
+siguen sin clasificación. Si la importación falla, la página muestra un aviso y
+el error queda registrado en el servidor.
+
+Desde las temporadas con resultados importados se puede abrir la clasificación
+detallada de cada carrera. Los nombres de los pilotos enlazan a
+`/pilotos/[driverId]`, donde se muestran sus estadísticas de trayectoria y los
+resultados importados.
+
+La ruta `/api/season-import` permite iniciar una importación manual desde 2023
+o desde el año indicado en el parámetro `year`. Cada desarrollador debe usar su
+propia configuración local de PostgreSQL; las credenciales de conexión no se
+comparten mediante Git.
 
 ## Learn More
 

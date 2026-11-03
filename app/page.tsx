@@ -37,18 +37,22 @@ export default async function Home({
     (_, index) => currentYear - index
   );
 
-  let roundsWithResults = await getSeasonRoundsWithResults(season).catch(
-    () => new Set<number>()
-  );
+  let roundsWithResults = await getSeasonRoundsWithResults(season);
+  let importError: string | null = null;
 
   if (roundsWithResults.size === 0 && season >= firstAvailableSeason) {
     try {
-      await importSeason(season);
-      roundsWithResults = await getSeasonRoundsWithResults(season).catch(
-        () => new Set<number>()
-      );
+      const summary = await importSeason(season);
+      roundsWithResults = await getSeasonRoundsWithResults(season);
+      if (summary.failures.length > 0) {
+        importError = `No se pudieron importar ${summary.failures.length} carreras.`;
+      }
     } catch (error) {
       console.error("Error importando la temporada desde OpenF1:", error);
+      importError =
+        error instanceof Error
+          ? error.message
+          : "No se pudo importar la temporada desde OpenF1.";
     }
   }
 
@@ -146,10 +150,19 @@ export default async function Home({
           </p>
         )}
 
+        {importError && (
+          <p
+            className="mb-6 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200"
+            role="alert"
+          >
+            No se pudieron cargar todos los resultados: {importError}
+          </p>
+        )}
+
         {calendar.races.length === 0 ? (
           <section className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
             <h2 className="text-xl font-semibold">
-              Calendario todav�a no disponible
+              Calendario todavía no disponible
             </h2>
             <p className="mt-2 text-slate-300">
               OpenF1 aún no publicó carreras para la temporada {calendar.season}.

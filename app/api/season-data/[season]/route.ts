@@ -11,15 +11,19 @@ export async function GET(
   const { season: seasonParam } = await params;
   const season = Number(seasonParam);
 
-  if (!Number.isInteger(season) || season < 2023) {
+  if (
+    !Number.isInteger(season) ||
+    season < 2023 ||
+    season > new Date().getFullYear()
+  ) {
     return NextResponse.json(
       { success: false, message: "La temporada debe ser un año válido desde 2023" },
       { status: 400 }
     );
   }
 
-  let standings = await getSeasonStandings(season).catch(() => null);
-  if (!standings || standings.races === 0) {
+  let standings = await getSeasonStandings(season);
+  if (standings.races === 0) {
     try {
       await importSeason(season);
       standings = await getSeasonStandings(season);
