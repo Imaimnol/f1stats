@@ -12,14 +12,20 @@ export async function GET(
   const season = Number(seasonParam);
   const round = Number(roundParam);
 
-  if (!Number.isInteger(season) || season < 2023 || !Number.isInteger(round)) {
+  if (
+    !Number.isInteger(season) ||
+    season < 2023 ||
+    season > new Date().getFullYear() ||
+    !Number.isInteger(round) ||
+    round < 1
+  ) {
     return NextResponse.json(
       { success: false, message: "La temporada y la ronda deben ser válidas" },
       { status: 400 }
     );
   }
 
-  let race = await getRaceResults(season, round).catch(() => null);
+  let race = await getRaceResults(season, round);
 
   if (!race) {
     try {

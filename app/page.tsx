@@ -12,6 +12,19 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   timeZone: "UTC",
 });
 
+const dayAndDateFormatter = new Intl.DateTimeFormat("es-AR", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  timeZone: "UTC",
+});
+
+const timeFormatter = new Intl.DateTimeFormat("es-AR", {
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "UTC",
+});
+
 const firstAvailableSeason = 2023;
 
 export default async function Home({
@@ -37,18 +50,22 @@ export default async function Home({
     (_, index) => currentYear - index
   );
 
-  let roundsWithResults = await getSeasonRoundsWithResults(season).catch(
-    () => new Set<number>()
-  );
+  let roundsWithResults = await getSeasonRoundsWithResults(season);
+  let importError: string | null = null;
 
   if (roundsWithResults.size === 0 && season >= firstAvailableSeason) {
     try {
-      await importSeason(season);
-      roundsWithResults = await getSeasonRoundsWithResults(season).catch(
-        () => new Set<number>()
-      );
+      const summary = await importSeason(season);
+      roundsWithResults = await getSeasonRoundsWithResults(season);
+      if (summary.failures.length > 0) {
+        importError = `No se pudieron importar ${summary.failures.length} carreras.`;
+      }
     } catch (error) {
       console.error("Error importando la temporada desde OpenF1:", error);
+      importError =
+        error instanceof Error
+          ? error.message
+          : "No se pudo importar la temporada desde OpenF1.";
     }
   }
 
@@ -58,6 +75,18 @@ export default async function Home({
       return null;
     }
   );
+
+  const nextRace =
+    calendar?.races.find(
+      (race) => new Date(race.dateStart).getTime() >= Date.now()
+    ) ?? null;
+  const nextRaceDate = nextRace ? new Date(nextRace.dateStart) : null;
+  const countdownDays = nextRaceDate
+    ? Math.max(
+        0,
+        Math.ceil((nextRaceDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      )
+    : null;
 
   if (!calendar) {
     return (
@@ -137,6 +166,88 @@ export default async function Home({
           </div>
         </header>
 
+        {nextRace && nextRaceDate ? (
+          <section className="mb-8 overflow-hidden rounded-3xl border border-red-500/20 bg-gradient-to-br from-red-500/10 via-slate-900 to-slate-900 p-6 shadow-[0_0_30px_rgba(239,68,68,0.08)]">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-300">
+                  Mi fin de semana de F1
+                </p>
+                <h2 className="mt-2 text-2xl font-bold text-white">
+                  Próximo GP
+                </h2>
+              </div>
+              <div className="inline-flex rounded-full border border-red-400/30 bg-red-500/10 px-3 py-1.5 text-sm font-semibold text-red-100">
+                {countdownDays === 0 ? "Hoy" : `En ${countdownDays} días`}
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  Ronda {nextRace.round}
+                </p>
+                <h3 className="mt-3 text-3xl font-bold tracking-tight text-white">
+                  {nextRace.circuitShortName}
+                </h3>
+                <p className="mt-2 text-lg text-slate-200">
+                  {nextRace.location}, {nextRace.countryName}
+                </p>
+                <p className="mt-4 text-sm text-slate-300">
+                  {dayAndDateFormatter.format(nextRaceDate)}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  Horario
+                </p>
+                <p className="mt-3 text-3xl font-bold text-white">
+                  {timeFormatter.format(nextRaceDate)}
+                </p>
+                <p className="mt-2 text-sm text-slate-300">
+                  Carrera principal (UTC)
+                </p>
+                <p className="mt-4 text-sm text-red-200">
+                  {Math.max(0, countdownDays ?? 0)} días para vivir el fin de semana.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              {[
+                { label: "Viernes", value: "Libres 1 y 2" },
+                { label: "Sábado", value: "Libres 3 y clasificación" },
+                { label: "Domingo", value: "Gran Premio" },
+              ].map((slot) => (
+                <div
+                  key={slot.label}
+                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    {slot.label}
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-100">
+                    {slot.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section className="mb-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+              Mi fin de semana de F1
+            </p>
+            <h2 className="mt-3 text-2xl font-bold text-white">
+              Próximo GP no disponible
+            </h2>
+            <p className="mt-2 text-slate-300">
+              Todavía no hay una carrera próxima en esta temporada.
+            </p>
+          </section>
+        )}
+
         {hasInvalidSeason && (
           <p
             className="mb-6 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200"
@@ -146,10 +257,19 @@ export default async function Home({
           </p>
         )}
 
+        {importError && (
+          <p
+            className="mb-6 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200"
+            role="alert"
+          >
+            No se pudieron cargar todos los resultados: {importError}
+          </p>
+        )}
+
         {calendar.races.length === 0 ? (
           <section className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
             <h2 className="text-xl font-semibold">
-              Calendario todav�a no disponible
+              Calendario todavía no disponible
             </h2>
             <p className="mt-2 text-slate-300">
               OpenF1 aún no publicó carreras para la temporada {calendar.season}.

@@ -131,20 +131,21 @@ export default async function StatisticsPage({
       !availableSeasons.includes(requestedSeason));
   const season = hasInvalidSeason ? currentSeason : requestedSeason;
 
-  let standings = await getSeasonStandings(season).catch(() => null);
-  if (!standings || standings.races === 0) {
+  let standings = await getSeasonStandings(season);
+  let importError: string | null = null;
+  if (standings.races === 0) {
     try {
-      await importSeason(season);
+      const summary = await importSeason(season);
       standings = await getSeasonStandings(season);
+      if (summary.failures.length > 0) {
+        importError = `No se pudieron importar ${summary.failures.length} carreras.`;
+      }
     } catch (error) {
       console.error("Error importando resultados de la temporada:", error);
-      standings = {
-        season,
-        races: 0,
-        drivers: [],
-        constructors: [],
-        raceDetails: [],
-      };
+      importError =
+        error instanceof Error
+          ? error.message
+          : "No se pudieron importar los resultados de la temporada.";
     }
   }
 
@@ -213,6 +214,15 @@ export default async function StatisticsPage({
           >
             La temporada solicitada no está disponible. Elegí una de las
             temporadas con resultados importados.
+          </p>
+        )}
+
+        {importError && (
+          <p
+            className="mb-6 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200"
+            role="alert"
+          >
+            No se pudieron cargar todos los resultados: {importError}
           </p>
         )}
 
