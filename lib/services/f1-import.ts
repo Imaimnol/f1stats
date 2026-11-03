@@ -42,6 +42,47 @@ type OpenF1Result = {
   dsq: boolean;
 };
 
+type SeasonRaceCalendar = Awaited<
+  ReturnType<typeof getSeasonRaceCalendar>
+>;
+
+type PreparedRaceImport = {
+  session: OpenF1Session;
+  meetings: OpenF1Meeting[];
+  drivers: OpenF1Driver[];
+  results: OpenF1Result[];
+  seasonCalendar: SeasonRaceCalendar;
+};
+
+type SeasonImportSummary = {
+  season: number;
+  scheduledRaces: number;
+  importedRaces: number;
+  importedDrivers: number;
+  importedResults: number;
+  skippedWithoutResults: number;
+  failures: Array<{ sessionKey: number; error: string }>;
+};
+
+let lastRateLimitedRequestAt = 0;
+
+function delay(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function getOpenF1RateLimited<T>(
+  endpoint: string,
+  params: Record<string, string>
+): Promise<T> {
+  const elapsed = Date.now() - lastRateLimitedRequestAt;
+  if (elapsed < 1100) {
+    await delay(1100 - elapsed);
+  }
+
+  lastRateLimitedRequestAt = Date.now();
+  return getOpenF1<T>(endpoint, params);
+}
+
 function normalizeExternalId(value: string): string {
   return value
     .normalize("NFD")
@@ -74,6 +115,10 @@ export async function getSeasonRaceCalendar(year: number) {
     session_name: "Race",
   });
 
+  return buildSeasonRaceCalendar(year, sessions);
+}
+
+function buildSeasonRaceCalendar(year: number, sessions: OpenF1Session[]) {
   const raceSessions = sessions.filter(
     (item) => item.session_type === "Race" && !item.is_cancelled
   );
@@ -127,56 +172,25 @@ export async function getSeasonRaceCalendar(year: number) {
 }
 
 export async function importSeason(year: number) {
-  if (!Number.isInteger(year)) {
-    throw new Error("El año de temporada debe ser un número entero");
+  if (
+    !Number.isInteger(year) ||
+    year < 2023 ||
+    year > new Date().getFullYear()
+  ) {
+    throw new Error("La temporada debe ser un año entre 2023 y el año actual");
   }
 
-  const calendar = await getSeasonRaceCalendar(year);
-  if (calendar.races.length === 0) {
-    return {
-      success: true,
-      season: year,
-      imported: 0,
-      total: 0,
-      failures: [],
-    };
-  }
-
-  let imported = 0;
-  const failures: Array<{ round: number; sessionKey: number; error: string }> = [];
-
-  for (const race of calendar.races) {
-    try {
-      await importRaceBySessionKey(race.sessionKey);
-      imported += 1;
-    } catch (error) {
-      failures.push({
-        round: race.round,
-        sessionKey: race.sessionKey,
-        error:
-          error instanceof Error ? error.message : "Error desconocido",
-      });
-    }
-  }
-
-  if (imported === 0 && failures.length > 0) {
-    throw new Error(
-      `No se pudo importar ninguna carrera de la temporada ${year}`
-    );
-  }
-
-  return {
-    success: true,
-    season: year,
-    imported,
-    total: calendar.races.length,
-    failures,
-  };
+  const [summary] = await importSeasons([year]);
+  return summary;
 }
 
 export async function importSeasonsFromYear(year: number) {
-  if (!Number.isInteger(year)) {
-    throw new Error("El año inicial debe ser un número entero");
+  if (
+    !Number.isInteger(year) ||
+    year < 2023 ||
+    year > new Date().getFullYear()
+  ) {
+    throw new Error("El año inicial debe estar entre 2023 y el año actual");
   }
 
   const currentYear = new Date().getFullYear();
@@ -194,12 +208,14 @@ export async function importSeasonsFromYear(year: number) {
 }
 
 export async function importRaceBySessionKey(
-  sessionKey: number
+  sessionKey: number,
+  prepared?: PreparedRaceImport
 ) {
-  const matchingSessions = await getOpenF1<OpenF1Session[]>(
-    "sessions",
-    { session_key: String(sessionKey) }
-  );
+  const matchingSessions = prepared
+    ? [prepared.session]
+    : await getOpenF1<OpenF1Session[]>("sessions", {
+        session_key: String(sessionKey),
+      });
 
   const session = matchingSessions.find(
     (item) =>
@@ -214,18 +230,25 @@ export async function importRaceBySessionKey(
     );
   }
 
-  const [meetings, drivers, results, seasonCalendar] = await Promise.all([
-    getOpenF1<OpenF1Meeting[]>("meetings", {
-      year: String(session.year),
-    }),
-    getOpenF1<OpenF1Driver[]>("drivers", {
-      session_key: String(sessionKey),
-    }),
-    getOpenF1<OpenF1Result[]>("session_result", {
-      session_key: String(sessionKey),
-    }),
-    getSeasonRaceCalendar(session.year),
-  ]);
+  const [meetings, drivers, results, seasonCalendar] = prepared
+    ? [
+        prepared.meetings,
+        prepared.drivers,
+        prepared.results,
+        prepared.seasonCalendar,
+      ]
+    : await Promise.all([
+        getOpenF1<OpenF1Meeting[]>("meetings", {
+          year: String(session.year),
+        }),
+        getOpenF1<OpenF1Driver[]>("drivers", {
+          session_key: String(sessionKey),
+        }),
+        getOpenF1<OpenF1Result[]>("session_result", {
+          session_key: String(sessionKey),
+        }),
+        getSeasonRaceCalendar(session.year),
+      ]);
 
   if (drivers.length === 0 || results.length === 0) {
     throw new Error(
@@ -368,9 +391,7 @@ export async function importRaceBySessionKey(
     existingCircuit &&
     (!hasSameName(existingCircuit.name, session.circuit_short_name) ||
       (existingCircuit.country &&
-        !hasSameName(existingCircuit.country, session.country_name)) ||
-      (existingCircuit.locality &&
-        !hasSameName(existingCircuit.locality, session.location)))
+        !hasSameName(existingCircuit.country, session.country_name)))
   ) {
     throw new Error(
       `El circuito OpenF1 ${session.circuit_key} ya está asociado a datos diferentes`
@@ -424,7 +445,7 @@ export async function importRaceBySessionKey(
     },
     update: {
       name: session.circuit_short_name,
-      locality: session.location,
+      locality: existingCircuit?.locality ?? session.location,
       country: session.country_name,
     },
     create: {
@@ -570,4 +591,106 @@ export async function importRaceBySessionKey(
     drivers: importedDrivers,
     results: importedResults,
   };
+}
+
+export async function importSeasons(years: number[]) {
+  if (
+    years.length === 0 ||
+    years.some(
+      (year) =>
+        !Number.isInteger(year) || year < 2023 || year > new Date().getFullYear()
+    )
+  ) {
+    throw new Error(
+      "Las temporadas deben ser años enteros entre 2023 y el año actual"
+    );
+  }
+
+  const summaries: SeasonImportSummary[] = [];
+
+  for (const season of [...new Set(years)].sort((left, right) => left - right)) {
+    const sessions = await getOpenF1RateLimited<OpenF1Session[]>("sessions", {
+      year: String(season),
+      session_name: "Race",
+    });
+    const seasonCalendar = await buildSeasonRaceCalendar(season, sessions);
+    const meetings = await getOpenF1RateLimited<OpenF1Meeting[]>("meetings", {
+      year: String(season),
+    });
+    const summary: SeasonImportSummary = {
+      season,
+      scheduledRaces: seasonCalendar.races.length,
+      importedRaces: 0,
+      importedDrivers: 0,
+      importedResults: 0,
+      skippedWithoutResults: 0,
+      failures: [],
+    };
+
+    for (const race of seasonCalendar.races) {
+      try {
+        let results: OpenF1Result[];
+        try {
+          results = await getOpenF1RateLimited<OpenF1Result[]>(
+            "session_result",
+            { session_key: String(race.sessionKey) }
+          );
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            error.message.includes(
+              "OpenF1 respondió con error 404: session_result"
+            )
+          ) {
+            summary.skippedWithoutResults++;
+            continue;
+          }
+          throw error;
+        }
+
+        if (results.length === 0) {
+          summary.skippedWithoutResults++;
+          continue;
+        }
+
+        const drivers = await getOpenF1RateLimited<OpenF1Driver[]>("drivers", {
+          session_key: String(race.sessionKey),
+        });
+        const session: OpenF1Session = {
+          session_key: race.sessionKey,
+          session_name: "Race",
+          session_type: "Race",
+          meeting_key: race.meetingKey,
+          circuit_key: race.circuitKey,
+          circuit_short_name: race.circuitShortName,
+          country_name: race.countryName,
+          location: race.location,
+          date_start: race.dateStart,
+          year: season,
+          is_cancelled: false,
+        };
+        const result = await importRaceBySessionKey(race.sessionKey, {
+          session,
+          meetings,
+          drivers,
+          results,
+          seasonCalendar,
+        });
+
+        summary.importedRaces++;
+        summary.importedDrivers += result.drivers;
+        summary.importedResults += result.results;
+      } catch (error) {
+        summary.failures.push({
+          sessionKey: race.sessionKey,
+          error:
+            error instanceof Error ? error.message : "Error desconocido",
+        });
+      }
+    }
+
+    summaries.push(summary);
+  }
+
+  return summaries;
 }

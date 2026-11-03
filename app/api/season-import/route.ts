@@ -10,7 +10,12 @@ export async function GET(request: Request) {
   const yearParam = new URL(request.url).searchParams.get("year");
   const startYear = yearParam ? Number(yearParam) : 2023;
 
-  if (!Number.isInteger(startYear) || startYear < 2023) {
+  if (
+    (yearParam !== null && !/^\d{4}$/.test(yearParam)) ||
+    !Number.isInteger(startYear) ||
+    startYear < 2023 ||
+    startYear > new Date().getFullYear()
+  ) {
     return NextResponse.json(
       {
         success: false,
@@ -22,7 +27,7 @@ export async function GET(request: Request) {
 
   try {
     const result =
-      yearParam && /^\d{4}$/.test(yearParam)
+      yearParam !== null
         ? await importSeason(startYear)
         : await importSeasonsFromYear(startYear);
 
