@@ -22,6 +22,15 @@ model User {
   updatedAt    DateTime @updatedAt
 
   favorites FavoriteDriver[]
+
+  favoriteDriverId String?
+  favoriteDriver   Driver? @relation("UserFavoriteDriver", fields: [favoriteDriverId], references: [id])
+
+  favoriteTeamId String?
+  favoriteTeam   Team? @relation("UserFavoriteTeam", fields: [favoriteTeamId], references: [id])
+
+  favoriteCircuitId String?
+  favoriteCircuit   Circuit? @relation("UserFavoriteCircuit", fields: [favoriteCircuitId], references: [id])
 }
 
 model Driver {
@@ -38,6 +47,8 @@ model Driver {
 
   results   RaceResult[]
   favorites FavoriteDriver[]
+
+  usersWithFavorite User[] @relation("UserFavoriteDriver")
 }
 
 model Team {
@@ -49,6 +60,8 @@ model Team {
   updatedAt   DateTime @updatedAt
 
   results RaceResult[]
+
+  usersWithFavorite User[] @relation("UserFavoriteTeam")
 
   @@map("Constructor")
 }
@@ -65,6 +78,8 @@ model Circuit {
   updatedAt  DateTime @updatedAt
 
   races Race[]
+
+  usersWithFavorite User[] @relation("UserFavoriteCircuit")
 }
 
 model Race {
