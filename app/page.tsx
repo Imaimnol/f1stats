@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
 import {
   getSeasonRaceCalendar,
   importSeason,
@@ -26,6 +27,7 @@ const timeFormatter = new Intl.DateTimeFormat("es-AR", {
 });
 
 const firstAvailableSeason = 2023;
+const serverNow = Date.now();
 
 export default async function Home({
   searchParams,
@@ -49,6 +51,7 @@ export default async function Home({
     { length: Math.max(0, currentYear - firstAvailableSeason + 1) },
     (_, index) => currentYear - index
   );
+  const currentUser = await getCurrentUser();
 
   let roundsWithResults = await getSeasonRoundsWithResults(season);
   let importError: string | null = null;
@@ -78,13 +81,13 @@ export default async function Home({
 
   const nextRace =
     calendar?.races.find(
-      (race) => new Date(race.dateStart).getTime() >= Date.now()
+      (race) => new Date(race.dateStart).getTime() >= serverNow
     ) ?? null;
   const nextRaceDate = nextRace ? new Date(nextRace.dateStart) : null;
   const countdownDays = nextRaceDate
     ? Math.max(
         0,
-        Math.ceil((nextRaceDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+        Math.ceil((nextRaceDate.getTime() - serverNow) / (1000 * 60 * 60 * 24))
       )
     : null;
 
@@ -139,6 +142,38 @@ export default async function Home({
               >
                 Ver campeonatos
               </Link>
+
+              {currentUser ? (
+                <div className="flex items-center gap-3 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-2">
+                  <span className="text-sm font-semibold text-red-100">
+                    Hola, {currentUser.username}
+                  </span>
+                  <form action="/api/auth/logout" method="post">
+                    <button
+                      className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-200 transition-colors hover:border-red-400/40 hover:text-white"
+                      type="submit"
+                    >
+                      Salir
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/login"
+                    className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-red-400/40 hover:text-white"
+                  >
+                    Ingresar
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-400"
+                  >
+                    Registrarse
+                  </Link>
+                </div>
+              )}
+
               <form action="/" className="flex items-center gap-2" method="get">
                 <label className="sr-only" htmlFor="season">
                   Elegir temporada
