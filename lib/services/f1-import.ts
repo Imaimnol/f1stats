@@ -126,6 +126,73 @@ export async function getSeasonRaceCalendar(year: number) {
   };
 }
 
+export async function importSeason(year: number) {
+  if (!Number.isInteger(year)) {
+    throw new Error("El año de temporada debe ser un número entero");
+  }
+
+  const calendar = await getSeasonRaceCalendar(year);
+  if (calendar.races.length === 0) {
+    return {
+      success: true,
+      season: year,
+      imported: 0,
+      total: 0,
+      failures: [],
+    };
+  }
+
+  let imported = 0;
+  const failures: Array<{ round: number; sessionKey: number; error: string }> = [];
+
+  for (const race of calendar.races) {
+    try {
+      await importRaceBySessionKey(race.sessionKey);
+      imported += 1;
+    } catch (error) {
+      failures.push({
+        round: race.round,
+        sessionKey: race.sessionKey,
+        error:
+          error instanceof Error ? error.message : "Error desconocido",
+      });
+    }
+  }
+
+  if (imported === 0 && failures.length > 0) {
+    throw new Error(
+      `No se pudo importar ninguna carrera de la temporada ${year}`
+    );
+  }
+
+  return {
+    success: true,
+    season: year,
+    imported,
+    total: calendar.races.length,
+    failures,
+  };
+}
+
+export async function importSeasonsFromYear(year: number) {
+  if (!Number.isInteger(year)) {
+    throw new Error("El año inicial debe ser un número entero");
+  }
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from(
+    { length: Math.max(0, currentYear - year + 1) },
+    (_, index) => year + index
+  );
+
+  const results = [];
+  for (const season of years) {
+    results.push(await importSeason(season));
+  }
+
+  return results;
+}
+
 export async function importRaceBySessionKey(
   sessionKey: number
 ) {
