@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
 import { getDriverProfile } from "@/lib/services/drivers";
+import { prisma } from "@/lib/prisma";
+import FavoriteButton from "./favorite-button";
 
 const pointsFormatter = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 2,
@@ -23,11 +26,26 @@ export default async function DriverPage({
 }) {
   await connection();
   const { driverId } = await params;
-  const driver = await getDriverProfile(driverId);
+  const [driver, user] = await Promise.all([
+    getDriverProfile(driverId),
+    getCurrentUser(),
+  ]);
 
   if (!driver) {
     notFound();
   }
+
+  const favorite = user
+    ? await prisma.favoriteDriver.findUnique({
+        where: {
+          userId_driverId: {
+            userId: user.id,
+            driverId,
+          },
+        },
+        select: { id: true },
+      })
+    : null;
 
   const driverName = `${driver.firstName} ${driver.lastName}`;
 
@@ -57,9 +75,19 @@ export default async function DriverPage({
                   ` · #${driver.permanentNumber}`}
               </p>
             </div>
-            <span className="rounded-full border border-red-400/40 bg-red-400/10 px-4 py-2 text-sm font-semibold text-red-200">
-              Trayectoria registrada
-            </span>
+            {user ? (
+              <FavoriteButton
+                driverId={driverId}
+                initialFavorite={favorite !== null}
+              />
+            ) : (
+              <Link
+                className="rounded-full border border-red-400/40 bg-red-400/10 px-4 py-2 text-sm font-semibold text-red-200 transition-colors hover:bg-red-400/20"
+                href="/login"
+              >
+                Ingresá para guardar favoritos
+              </Link>
+            )}
           </div>
         </header>
 
