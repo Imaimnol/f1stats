@@ -1,4 +1,5 @@
 import { connection, NextResponse } from "next/server";
+import { importSeason } from "@/lib/services/f1-import";
 import { getSeasonStandings } from "@/lib/services/standings";
 
 export async function GET(
@@ -17,7 +18,24 @@ export async function GET(
     );
   }
 
-  const standings = await getSeasonStandings(season);
+  let standings = await getSeasonStandings(season).catch(() => null);
+  if (!standings || standings.races === 0) {
+    try {
+      await importSeason(season);
+      standings = await getSeasonStandings(season);
+    } catch (error) {
+      console.error("Error importando la temporada desde OpenF1:", error);
+      return NextResponse.json(
+        {
+          success: false,
+          message: "No se pudieron cargar los resultados de la temporada",
+          error:
+            error instanceof Error ? error.message : "Error desconocido",
+        },
+        { status: 502 }
+      );
+    }
+  }
 
   return NextResponse.json(standings);
 }

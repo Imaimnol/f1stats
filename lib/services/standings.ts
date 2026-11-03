@@ -63,7 +63,13 @@ export async function getAvailableSeasons(currentSeason: number) {
     },
   });
 
-  return [...new Set([currentSeason, ...races.map((race) => race.season)])].sort(
+  const databaseSeasons = races.map((race) => race.season);
+  const fallbackSeasons = Array.from(
+    { length: Math.max(0, currentSeason - 2023 + 1) },
+    (_, index) => currentSeason - index
+  ).filter((season) => season >= 2023);
+
+  return [...new Set([...fallbackSeasons, ...databaseSeasons, currentSeason])].sort(
     (left, right) => right - left
   );
 }

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { getSeasonRaceCalendar } from "@/lib/services/f1-import";
+import {
+  getSeasonRaceCalendar,
+  importSeason,
+} from "@/lib/services/f1-import";
 import { getSeasonRoundsWithResults } from "@/lib/services/race-results";
 
 const dateFormatter = new Intl.DateTimeFormat("es-AR", {
@@ -34,13 +37,27 @@ export default async function Home({
     (_, index) => currentYear - index
   );
 
-  const [calendar, roundsWithResults] = await Promise.all([
-    getSeasonRaceCalendar(season).catch((error: unknown) => {
+  let roundsWithResults = await getSeasonRoundsWithResults(season).catch(
+    () => new Set<number>()
+  );
+
+  if (roundsWithResults.size === 0 && season >= firstAvailableSeason) {
+    try {
+      await importSeason(season);
+      roundsWithResults = await getSeasonRoundsWithResults(season).catch(
+        () => new Set<number>()
+      );
+    } catch (error) {
+      console.error("Error importando la temporada desde OpenF1:", error);
+    }
+  }
+
+  const calendar = await getSeasonRaceCalendar(season).catch(
+    (error: unknown) => {
       console.error("Error cargando el calendario de la temporada:", error);
       return null;
-    }),
-    getSeasonRoundsWithResults(season).catch(() => new Set<number>()),
-  ]);
+    }
+  );
 
   if (!calendar) {
     return (

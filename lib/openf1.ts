@@ -1,9 +1,15 @@
 
 const OPENF1_BASE_URL = "https://api.openf1.org/v1";
+const OPENF1_MAX_RETRIES = 5;
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export async function getOpenF1<T>(
   endpoint: string,
-  params: Record<string, string> = {}
+  params: Record<string, string> = {},
+  retries = OPENF1_MAX_RETRIES
 ): Promise<T> {
   const url = new URL(`${OPENF1_BASE_URL}/${endpoint}`);
 
@@ -11,18 +17,38 @@ export async function getOpenF1<T>(
     url.searchParams.set(key, value);
   }
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      Accept: "application/json",
-    },
-    cache: "no-store",
-  });
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const response = await fetch(url.toString(), {
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
 
-  if (!response.ok) {
-    throw new Error(
-      `OpenF1 respondió con error ${response.status}: ${endpoint}`
-    );
+    if (response.ok) {
+      return response.json() as Promise<T>;
+    }
+
+    const retryAfterHeader = response.headers.get("Retry-After");
+    const retryAfterSeconds = Number(retryAfterHeader ?? "");
+    const isRateLimited = response.status === 429;
+    const shouldRetry =
+      (isRateLimited || response.status >= 500) &&
+      attempt < retries;
+
+    if (!shouldRetry) {
+      throw new Error(
+        `OpenF1 respondió con error ${response.status}: ${endpoint}`
+      );
+    }
+
+    const delayMs =
+      Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+        ? retryAfterSeconds * 1000
+        : 1000 * 2 ** attempt;
+
+    await wait(delayMs);
   }
 
-  return response.json() as Promise<T>;
+  throw new Error(`OpenF1 respondió con error final: ${endpoint}`);
 }

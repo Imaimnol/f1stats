@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import { importSeason } from "@/lib/services/f1-import";
 import {
   getAvailableSeasons,
   getSeasonStandings,
@@ -130,7 +131,22 @@ export default async function StatisticsPage({
       !availableSeasons.includes(requestedSeason));
   const season = hasInvalidSeason ? currentSeason : requestedSeason;
 
-  const standings = await getSeasonStandings(season);
+  let standings = await getSeasonStandings(season).catch(() => null);
+  if (!standings || standings.races === 0) {
+    try {
+      await importSeason(season);
+      standings = await getSeasonStandings(season);
+    } catch (error) {
+      console.error("Error importando resultados de la temporada:", error);
+      standings = {
+        season,
+        races: 0,
+        drivers: [],
+        constructors: [],
+        raceDetails: [],
+      };
+    }
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14">
