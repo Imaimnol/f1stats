@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 function redirectToHome(request: Request, result: string) {
-  const url = new URL("/", request.url);
+  const url = new URL("/#prediccion", request.url);
   url.searchParams.set("prediction", result);
   return NextResponse.redirect(url, 303);
 }

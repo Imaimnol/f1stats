@@ -28,6 +28,12 @@ export default async function RankingPage() {
           <p className="mt-3 text-slate-300">
             Puntos acumulados por acertar el podio de cada carrera.
           </p>
+          <Link
+            href="/#prediccion"
+            className="mt-5 inline-flex rounded-full bg-red-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-400"
+          >
+            Hacer mi predicción
+          </Link>
         </header>
 
         {isDemo && (

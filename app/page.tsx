@@ -321,7 +321,10 @@ export default async function Home({
                 </div>
               ))}
             </div>
-            <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/60 p-5">
+            <div
+              className="mt-6 rounded-2xl border border-white/10 bg-slate-950/60 p-5"
+              id="prediccion"
+            >
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                 <div>
                   <h3 className="text-lg font-semibold">Predice el podio</h3>
