@@ -116,45 +116,75 @@ function scorePrediction(
 }
 
 export async function getPredictionLeaderboard() {
-  const users = await prisma.user.findMany({
-    orderBy: { username: "asc" },
-    select: {
-      id: true,
-      username: true,
-      predictions: {
-        select: {
-          firstDriverId: true,
-          secondDriverId: true,
-          thirdDriverId: true,
-          race: {
-            select: {
-              results: {
-                select: {
-                  position: true,
-                  driverId: true,
+  const testEntry = {
+    id: "demo",
+    username: "Prueba",
+    points: 1,
+    predictions: 0,
+  };
+
+  try {
+    const users = await prisma.user.findMany({
+      orderBy: { username: "asc" },
+      select: {
+        id: true,
+        username: true,
+        predictions: {
+          select: {
+            firstDriverId: true,
+            secondDriverId: true,
+            thirdDriverId: true,
+            race: {
+              select: {
+                results: {
+                  select: {
+                    position: true,
+                    driverId: true,
+                  },
                 },
               },
             },
           },
         },
       },
-    },
-  });
+    });
 
-  return users
-    .map((user) => ({
-      id: user.id,
-      username: user.username,
-      points: user.predictions.reduce(
-        (total, prediction) =>
-          total + scorePrediction(prediction, prediction.race.results),
-        0
-      ),
-      predictions: user.predictions.length,
-    }))
-    .sort(
-      (left, right) =>
-        right.points - left.points ||
-        left.username.localeCompare(right.username)
-    );
+    const leaderboard = users
+      .map((user) => ({
+        id: user.id,
+        username: user.username,
+        points: user.predictions.reduce(
+          (total, prediction) =>
+            total + scorePrediction(prediction, prediction.race.results),
+          0
+        ),
+        predictions: user.predictions.length,
+      }))
+      .sort(
+        (left, right) =>
+          right.points - left.points ||
+          left.username.localeCompare(right.username)
+      );
+    const hasPoints = leaderboard.some((user) => user.points > 0);
+
+    return {
+      leaderboard: hasPoints
+        ? leaderboard
+        : [...leaderboard, testEntry].sort(
+            (left, right) =>
+              right.points - left.points ||
+              left.username.localeCompare(right.username)
+          ),
+      isDemo: !hasPoints,
+      error: null,
+    };
+  } catch (error) {
+    console.error("Error cargando el ranking de predicciones:", error);
+    return {
+      leaderboard: [testEntry],
+      isDemo: true,
+      error:
+        "No se pudieron consultar los datos reales del ranking. Mostramos un puntaje de prueba.",
+    };
+  }
 }

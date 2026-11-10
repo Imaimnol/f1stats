@@ -7,7 +7,7 @@ const pointsFormatter = new Intl.NumberFormat("es-AR");
 
 export default async function RankingPage() {
   await connection();
-  const leaderboard = await getPredictionLeaderboard();
+  const { leaderboard, isDemo, error } = await getPredictionLeaderboard();
 
   return (
     <main className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14">
@@ -30,14 +30,21 @@ export default async function RankingPage() {
           </p>
         </header>
 
-        {leaderboard.length === 0 ? (
-          <section className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
-            <h2 className="text-xl font-semibold">Todavía no hay usuarios</h2>
-            <p className="mt-2 text-slate-300">
-              Registrate para participar cuando empiecen las predicciones.
-            </p>
-          </section>
-        ) : (
+        {isDemo && (
+          <p
+            className={`mb-6 rounded-xl border px-4 py-3 text-sm ${
+              error
+                ? "border-amber-400/30 bg-amber-400/10 text-amber-200"
+                : "border-white/10 bg-white/[0.04] text-slate-300"
+            }`}
+            role={error ? "alert" : "status"}
+          >
+            {error ??
+              "Todavía no hay puntos de predicciones. Se muestra un usuario de prueba con 1 punto como ejemplo."}
+          </p>
+        )}
+
+        {leaderboard.length > 0 ? (
           <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[480px] text-left text-sm">
@@ -73,6 +80,13 @@ export default async function RankingPage() {
                 </tbody>
               </table>
             </div>
+          </section>
+        ) : (
+          <section className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
+            <h2 className="text-xl font-semibold">Todavía no hay usuarios</h2>
+            <p className="mt-2 text-slate-300">
+              Registrate para participar cuando empiecen las predicciones.
+            </p>
           </section>
         )}
       </div>
