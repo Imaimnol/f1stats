@@ -42,6 +42,19 @@ detallada de cada carrera. Los nombres de los pilotos enlazan a
 `/pilotos/[driverId]`, donde se muestran sus estadísticas de trayectoria y los
 resultados importados.
 
+## Predicciones y ranking
+
+Los usuarios con sesión iniciada pueden pronosticar el podio de la próxima
+carrera hasta su hora de inicio y modificar su predicción mientras siga abierto
+el plazo. Cada posición acertada suma 3 puntos; acertar el podio completo en el
+orden exacto suma 6 puntos extra, para un total de 15. La página `/ranking`
+muestra los puntos acumulados de todos los usuarios según los resultados
+importados.
+
+Para habilitar esta función en una base de datos, aplicar las migraciones
+pendientes con `npx prisma migrate deploy` desde el entorno configurado para esa
+base.
+
 La ruta `/api/season-import` permite iniciar una importación manual desde 2023
 o desde el año indicado en el parámetro `year`. Cada desarrollador debe usar su
 propia configuración local de PostgreSQL; las credenciales de conexión no se

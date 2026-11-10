@@ -6,6 +6,11 @@ import {
   importSeason,
 } from "@/lib/services/f1-import";
 import { getSeasonRoundsWithResults } from "@/lib/services/race-results";
+import {
+  getPredictionDrivers,
+  getUserRacePrediction,
+  preparePredictionRace,
+} from "@/lib/services/predictions";
 
 const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   day: "numeric",
@@ -27,15 +32,18 @@ const timeFormatter = new Intl.DateTimeFormat("es-AR", {
 });
 
 const firstAvailableSeason = 2023;
-const serverNow = Date.now();
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string | string[] }>;
+  searchParams: Promise<{
+    year?: string | string[];
+    prediction?: string | string[];
+  }>;
 }) {
   await connection();
 
+  const serverNow = new Date().getTime();
   const currentYear = new Date().getFullYear();
   const query = await searchParams;
   const requestedSeason =
@@ -52,6 +60,8 @@ export default async function Home({
     (_, index) => currentYear - index
   );
   const currentUser = await getCurrentUser();
+  const predictionResult =
+    typeof query.prediction === "string" ? query.prediction : null;
 
   let roundsWithResults = await getSeasonRoundsWithResults(season);
   let importError: string | null = null;
@@ -90,6 +100,35 @@ export default async function Home({
         Math.ceil((nextRaceDate.getTime() - serverNow) / (1000 * 60 * 60 * 24))
       )
     : null;
+
+  let predictionSetup: {
+      race: Awaited<ReturnType<typeof preparePredictionRace>>;
+      drivers: Awaited<ReturnType<typeof getPredictionDrivers>>;
+      prediction: Awaited<ReturnType<typeof getUserRacePrediction>>;
+  } | null = null;
+  let predictionLoadError: string | null = null;
+
+  if (currentUser && nextRace) {
+    try {
+      const predictionRace = await preparePredictionRace(season, nextRace);
+      const [drivers, prediction] = await Promise.all([
+        getPredictionDrivers(season),
+        getUserRacePrediction(currentUser.id, predictionRace.id),
+      ]);
+      predictionSetup = {
+        race: predictionRace,
+        drivers,
+        prediction,
+      };
+    } catch (error) {
+      console.error(
+        "Error preparando la predicción de la próxima carrera:",
+        error
+      );
+      predictionLoadError =
+        "No se pudo cargar el formulario de predicción. Intentá recargar la página.";
+    }
+  }
 
   if (!calendar) {
     return (
@@ -141,6 +180,12 @@ export default async function Home({
                 className="w-fit rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-red-400/40 hover:text-white"
               >
                 Ver campeonatos
+              </Link>
+              <Link
+                href="/ranking"
+                className="w-fit rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-red-400/40 hover:text-white"
+              >
+                Ranking
               </Link>
 
               {currentUser ? (
@@ -276,6 +321,105 @@ export default async function Home({
                 </div>
               ))}
             </div>
+            <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/60 p-5">
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                <div>
+                  <h3 className="text-lg font-semibold">Predice el podio</h3>
+                  <p className="mt-1 text-sm text-slate-300">
+                    3 puntos por cada posición exacta y 6 puntos extra si
+                    aciertas los tres en orden (15 puntos).
+                  </p>
+                </div>
+                <Link
+                  href="/ranking"
+                  className="text-sm font-semibold text-red-300 transition-colors hover:text-red-200"
+                >
+                  Ver ranking →
+                </Link>
+              </div>
+
+              {!currentUser ? (
+                <p className="mt-4 text-sm text-slate-300">
+                  <Link
+                    href="/login"
+                    className="font-semibold text-red-300 hover:text-red-200"
+                  >
+                    Inicia sesión
+                  </Link>{" "}
+                  para guardar tu predicción antes de que empiece la carrera.
+                </p>
+              ) : predictionLoadError ? (
+                <p className="mt-4 text-sm text-amber-200" role="alert">
+                  {predictionLoadError}
+                </p>
+              ) : predictionSetup?.drivers.length ? (
+                <form
+                  action="/api/predictions"
+                  className="mt-5 grid gap-4 sm:grid-cols-3"
+                  method="post"
+                >
+                  <input
+                    name="raceId"
+                    type="hidden"
+                    value={predictionSetup.race.id}
+                  />
+                  {[
+                    {
+                      field: "firstDriverId",
+                      label: "1.º puesto",
+                      value: predictionSetup.prediction?.firstDriverId,
+                    },
+                    {
+                      field: "secondDriverId",
+                      label: "2.º puesto",
+                      value: predictionSetup.prediction?.secondDriverId,
+                    },
+                    {
+                      field: "thirdDriverId",
+                      label: "3.º puesto",
+                      value: predictionSetup.prediction?.thirdDriverId,
+                    },
+                  ].map((position) => (
+                    <label
+                      className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
+                      htmlFor={position.field}
+                      key={position.field}
+                    >
+                      {position.label}
+                      <select
+                        className="mt-2 block w-full rounded-xl border border-white/15 bg-slate-900 px-3 py-2 text-sm font-medium normal-case tracking-normal text-white"
+                        defaultValue={position.value ?? ""}
+                        id={position.field}
+                        name={position.field}
+                        required
+                      >
+                        <option disabled value="">
+                          Elegí un piloto
+                        </option>
+                        {predictionSetup.drivers.map((driver) => (
+                          <option key={driver.id} value={driver.id}>
+                            {driver.firstName} {driver.lastName}
+                            {driver.code ? ` (${driver.code})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
+                  <button
+                    className="rounded-full bg-red-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-400 sm:col-span-3 sm:justify-self-start"
+                    type="submit"
+                  >
+                    {predictionSetup.prediction
+                      ? "Actualizar predicción"
+                      : "Guardar predicción"}
+                  </button>
+                </form>
+              ) : currentUser ? (
+                <p className="mt-4 text-sm text-amber-200">
+                  Todavía no hay pilotos cargados para armar una predicción.
+                </p>
+              ) : null}
+            </div>
           </section>
         ) : (
           <section className="mb-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-center">
@@ -289,6 +433,23 @@ export default async function Home({
               Todavía no hay una carrera próxima en esta temporada.
             </p>
           </section>
+        )}
+
+        {predictionResult && (
+          <p
+            className={`mb-6 rounded-xl border px-4 py-3 text-sm ${
+              predictionResult === "saved"
+                ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
+                : "border-amber-400/30 bg-amber-400/10 text-amber-200"
+            }`}
+            role={predictionResult === "saved" ? "status" : "alert"}
+          >
+            {predictionResult === "saved"
+              ? "Tu predicción quedó guardada."
+              : predictionResult === "closed"
+                ? "El plazo para predecir esta carrera ya terminó."
+                : "No se pudo guardar la predicción. Verifica que hayas elegido tres pilotos distintos."}
+          </p>
         )}
 
         {hasInvalidSeason && (
