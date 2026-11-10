@@ -37,6 +37,9 @@ guardados en la base local; las carreras futuras o sin resultados publicados
 siguen sin clasificación. Si la importación falla, la página muestra un aviso y
 el error queda registrado en el servidor.
 
+La página `/corredores` muestra los pilotos de cada temporada, sus equipos,
+números e imágenes obtenidas de OpenF1.
+
 Desde las temporadas con resultados importados se puede abrir la clasificación
 detallada de cada carrera. Los nombres de los pilotos enlazan a
 `/pilotos/[driverId]`, donde se muestran sus estadísticas de trayectoria y los
