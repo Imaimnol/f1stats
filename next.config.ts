@@ -8,15 +8,6 @@ const nextConfig: NextConfig = {
   },
   cacheComponents: true,
   partialPrefetching: true,
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "media.formula1.com",
-        pathname: "/**",
-      },
-    ],
-  },
   turbopack: {
     rules: {
       "*.css": {

@@ -2,40 +2,44 @@
 const OPENF1_BASE_URL = "https://api.openf1.org/v1";
 const OPENF1_MAX_RETRIES = 5;
 
-type OpenF1DriverHeadshot = {
+type OpenF1DriverInfo = {
   name_acronym: string;
-  headshot_url: string | null;
+  driver_number: number;
+  team_colour: string | null;
 };
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function getLatestDriverHeadshots() {
-  const drivers = await getOpenF1<OpenF1DriverHeadshot[]>(
+export async function getLatestDriverInfo() {
+  const drivers = await getOpenF1<OpenF1DriverInfo[]>(
     "drivers",
     { session_key: "latest" },
     1
   );
-  const headshots = new Map<string, string>();
+  const driverInfo = new Map<
+    string,
+    { number: number; teamColor: string | null }
+  >();
 
   for (const driver of drivers) {
     const acronym = driver.name_acronym?.trim().toUpperCase();
-    if (!acronym || !driver.headshot_url) {
+    if (!acronym || !Number.isInteger(driver.driver_number)) {
       continue;
     }
 
-    try {
-      const url = new URL(driver.headshot_url);
-      if (url.protocol === "https:" && url.hostname === "media.formula1.com") {
-        headshots.set(acronym, url.toString());
-      }
-    } catch {
-      continue;
-    }
+    const teamColor =
+      driver.team_colour && /^[\da-f]{6}$/i.test(driver.team_colour)
+        ? `#${driver.team_colour}`
+        : null;
+    driverInfo.set(acronym, {
+      number: driver.driver_number,
+      teamColor,
+    });
   }
 
-  return headshots;
+  return driverInfo;
 }
 
 export async function getOpenF1<T>(

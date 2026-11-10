@@ -4,6 +4,7 @@ type Standing = {
   id: string;
   name: string;
   detail: string | null;
+  permanentNumber?: number | null;
   points: number;
   wins: number;
   podiums: number;
@@ -42,6 +43,7 @@ function rankStandings(rows: Standing[]): Omit<Standing, "finishes">[] {
     id: row.id,
     name: row.name,
     detail: row.detail,
+    permanentNumber: row.permanentNumber,
     points: row.points,
     wins: row.wins,
     podiums: row.podiums,
@@ -106,6 +108,7 @@ export async function getSeasonStandings(season: number) {
           lastName: true,
           code: true,
           nationality: true,
+          permanentNumber: true,
         },
       },
       team: {
@@ -140,6 +143,7 @@ export async function getSeasonStandings(season: number) {
       id: result.driver.id,
       name: `${result.driver.firstName} ${result.driver.lastName}`,
       detail: result.driver.code ?? result.driver.nationality,
+      permanentNumber: result.driver.permanentNumber,
       points: 0,
       wins: 0,
       podiums: 0,

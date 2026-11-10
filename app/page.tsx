@@ -227,7 +227,11 @@ export default async function Home({
                 </div>
               )}
 
-              <form action="/" className="flex items-center gap-2" method="get">
+              <form
+                action="/estadisticas"
+                className="flex items-center gap-2"
+                method="get"
+              >
                 <label className="sr-only" htmlFor="season">
                   Elegir temporada
                 </label>
@@ -247,7 +251,7 @@ export default async function Home({
                   className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-400"
                   type="submit"
                 >
-                  Ver
+                  Ver campeonato
                 </button>
               </form>
             </div>

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import Image from "next/image";
-import { getLatestDriverHeadshots } from "@/lib/openf1";
+import { getLatestDriverInfo } from "@/lib/openf1";
 import { importSeason } from "@/lib/services/f1-import";
 import {
   getAvailableSeasons,
@@ -29,7 +28,8 @@ type Standing = {
   wins: number;
   podiums: number;
   starts: number;
-  imageUrl?: string;
+  driverNumber?: number | null;
+  teamColor?: string;
 };
 
 type AvailableSeasonsResponse = {
@@ -89,15 +89,19 @@ function StandingsTable({
                       className="flex items-center gap-3 font-semibold text-white transition-colors hover:text-red-300"
                       href={`/pilotos/${row.id}`}
                     >
-                      {row.imageUrl && (
-                        <Image
-                          alt=""
-                          className="h-10 w-10 rounded-full border border-white/10 bg-slate-800 object-cover"
-                          height={40}
-                          src={row.imageUrl}
-                          width={40}
-                        />
-                      )}
+                      {row.driverNumber !== null &&
+                        row.driverNumber !== undefined && (
+                          <span
+                            aria-label={`Número del piloto ${row.driverNumber}`}
+                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-white/20 text-lg font-black tabular-nums text-white"
+                            style={{
+                              backgroundColor: row.teamColor ?? "#475569",
+                              textShadow: "0 1px 3px rgb(0 0 0 / 80%)",
+                            }}
+                          >
+                            {row.driverNumber}
+                          </span>
+                        )}
                       {row.name}
                     </Link>
                   ) : (
@@ -164,18 +168,23 @@ export default async function StatisticsPage({
 
   if (season === currentSeason) {
     try {
-      const headshots = await getLatestDriverHeadshots();
+      const currentDrivers = await getLatestDriverInfo();
       standings = {
         ...standings,
         drivers: standings.drivers.map((driver) => ({
           ...driver,
-          imageUrl: driver.detail
-            ? headshots.get(driver.detail.toUpperCase())
+          driverNumber: driver.detail
+            ? currentDrivers.get(driver.detail.toUpperCase())?.number ??
+              driver.permanentNumber
+            : driver.permanentNumber,
+          teamColor: driver.detail
+            ? currentDrivers.get(driver.detail.toUpperCase())?.teamColor ??
+              undefined
             : undefined,
         })),
       };
     } catch (error) {
-      console.error("Error cargando las fotos de los pilotos:", error);
+      console.error("Error cargando los datos de los pilotos:", error);
     }
   }
 
