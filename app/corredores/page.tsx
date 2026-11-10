@@ -175,13 +175,20 @@ async function DriversContent({
 
                 return (
                   <li
-                    className="relative min-h-56 overflow-hidden rounded-2xl border bg-slate-900"
-                    key={`${driver.number}-${driver.code ?? name}`}
+                    className="relative min-h-56 overflow-hidden rounded-2xl border bg-slate-900 transition-transform duration-200 hover:-translate-y-1 hover:shadow-xl"
+                    key={`${driver.number}-${driver.code}-${name}`}
                     style={{
                       borderColor: `${driver.teamColor}70`,
                       background: `linear-gradient(125deg, ${driver.teamColor}38, #0f172a 72%)`,
                     }}
                   >
+                    <Link
+                      aria-label={`Ver perfil de ${name}`}
+                      className="absolute inset-0 z-20 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                      href={`/corredores/${season}/${driver.code}`}
+                    >
+                      <span className="sr-only">Ver perfil de {name}</span>
+                    </Link>
                     {driver.headshotUrl && (
                       <div className="absolute inset-y-0 right-0 w-3/5">
                         <Image
@@ -191,12 +198,11 @@ async function DriversContent({
                           loading={index < 3 ? "eager" : "lazy"}
                           sizes="(max-width: 640px) 60vw, (max-width: 1024px) 30vw, 20vw"
                           src={driver.headshotUrl}
-                          unoptimized
                         />
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-r from-slate-950/30 via-slate-950/10 to-transparent" />
-                    <div className="relative z-10 flex min-h-56 flex-col p-5">
+                    <div className="pointer-events-none relative z-10 flex min-h-56 flex-col p-5">
                       <div className="max-w-[65%]">
                         <h3
                           className="text-xl font-bold"
@@ -217,6 +223,9 @@ async function DriversContent({
                       <p className="mt-auto max-w-[65%] text-sm font-semibold text-white">
                         {driver.firstName} {driver.lastName}
                       </p>
+                      <span className="mt-2 text-xs font-semibold text-slate-300">
+                        Ver perfil →
+                      </span>
                     </div>
                   </li>
                 );
