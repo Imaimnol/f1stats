@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-function redirectToHome(request: Request, result: string) {
-  const url = new URL("/#prediccion", request.url);
+function redirectToPrediction(request: Request, result: string) {
+  const url = new URL("/prediccion", request.url);
   url.searchParams.set("prediction", result);
   return NextResponse.redirect(url, 303);
 }
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     typeof thirdDriverId !== "string" ||
     new Set([firstDriverId, secondDriverId, thirdDriverId]).size !== 3
   ) {
-    return redirectToHome(request, "invalid");
+    return redirectToPrediction(request, "invalid");
   }
 
   const race = await prisma.race.findUnique({
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
   });
 
   if (!race || race.date.getTime() <= Date.now() || race.results.length > 0) {
-    return redirectToHome(request, "closed");
+    return redirectToPrediction(request, "closed");
   }
 
   const drivers = await prisma.driver.findMany({
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   });
 
   if (drivers.length !== 3) {
-    return redirectToHome(request, "invalid");
+    return redirectToPrediction(request, "invalid");
   }
 
   await prisma.racePrediction.upsert({
@@ -83,5 +83,5 @@ export async function POST(request: Request) {
     },
   });
 
-  return redirectToHome(request, "saved");
+  return redirectToPrediction(request, "saved");
 }
