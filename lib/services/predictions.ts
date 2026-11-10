@@ -126,40 +126,66 @@ export async function getPredictionLeaderboard() {
   try {
     const users = await prisma.user.findMany({
       orderBy: { username: "asc" },
-      select: {
-        id: true,
-        username: true,
-        predictions: {
-          select: {
-            firstDriverId: true,
-            secondDriverId: true,
-            thirdDriverId: true,
-            race: {
-              select: {
-                results: {
-                  select: {
-                    position: true,
-                    driverId: true,
-                  },
+      select: { id: true, username: true },
+    });
+
+    let predictions: Array<{
+      userId: string;
+      firstDriverId: string;
+      secondDriverId: string;
+      thirdDriverId: string;
+      race: {
+        results: Array<{ position: number | null; driverId: string }>;
+      };
+    }> = [];
+    let errorMessage: string | null = null;
+
+    try {
+      predictions = await prisma.racePrediction.findMany({
+        select: {
+          userId: true,
+          firstDriverId: true,
+          secondDriverId: true,
+          thirdDriverId: true,
+          race: {
+            select: {
+              results: {
+                select: {
+                  position: true,
+                  driverId: true,
                 },
               },
             },
           },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error("Error cargando las predicciones del ranking:", error);
+      errorMessage =
+        "No se pudieron consultar las predicciones; los usuarios se muestran con 0 puntos.";
+    }
+
+    const predictionsByUser = new Map<string, typeof predictions>();
+    for (const prediction of predictions) {
+      const userPredictions = predictionsByUser.get(prediction.userId) ?? [];
+      userPredictions.push(prediction);
+      predictionsByUser.set(prediction.userId, userPredictions);
+    }
 
     const leaderboard = users
-      .map((user) => ({
-        id: user.id,
-        username: user.username,
-        points: user.predictions.reduce(
-          (total, prediction) =>
-            total + scorePrediction(prediction, prediction.race.results),
-          0
-        ),
-        predictions: user.predictions.length,
-      }))
+      .map((user) => {
+        const userPredictions = predictionsByUser.get(user.id) ?? [];
+        return {
+          id: user.id,
+          username: user.username,
+          points: userPredictions.reduce(
+            (total, prediction) =>
+              total + scorePrediction(prediction, prediction.race.results),
+            0
+          ),
+          predictions: userPredictions.length,
+        };
+      })
       .sort(
         (left, right) =>
           right.points - left.points ||
@@ -176,7 +202,7 @@ export async function getPredictionLeaderboard() {
               left.username.localeCompare(right.username)
           ),
       isDemo: !hasPoints,
-      error: null,
+      error: errorMessage,
     };
   } catch (error) {
     console.error("Error cargando el ranking de predicciones:", error);
