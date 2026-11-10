@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import LoginForm from "./login-form";
+
 export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-5 py-12 text-white">
@@ -12,41 +14,7 @@ export default function LoginPage() {
           Accedé para guardar tus pilotos favoritos y personalizar tu experiencia.
         </p>
 
-        <form action="/api/auth/login" className="mt-8 space-y-5" method="post">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-200" htmlFor="email">
-              Email
-            </label>
-            <input
-              className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none transition focus:border-red-400"
-              id="email"
-              name="email"
-              required
-              type="email"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-200" htmlFor="password">
-              Contraseña
-            </label>
-            <input
-              className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none transition focus:border-red-400"
-              id="password"
-              minLength={6}
-              name="password"
-              required
-              type="password"
-            />
-          </div>
-
-          <button
-            className="w-full rounded-full bg-red-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-400"
-            type="submit"
-          >
-            Entrar
-          </button>
-        </form>
+        <LoginForm />
 
         <p className="mt-6 text-center text-sm text-slate-300">
           ¿Todavía no tenés cuenta?{" "}

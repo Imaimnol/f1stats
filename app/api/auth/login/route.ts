@@ -32,12 +32,12 @@ export async function POST(request: Request) {
 
   if (!user || !verifyPassword(password, user.passwordHash)) {
     return NextResponse.json(
-      { error: "Credenciales inválidas." },
+      { error: "Contraseña incorrecta." },
       { status: 401 }
     );
   }
 
-  const response = NextResponse.redirect(new URL("/", request.url));
+  const response = NextResponse.json({ success: true });
   response.cookies.set(AUTH_COOKIE_NAME, createSessionToken(user), {
     httpOnly: true,
     sameSite: "lax",
