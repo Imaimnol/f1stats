@@ -7,6 +7,7 @@ import {
   getAvailableSeasons,
   getSeasonStandings,
 } from "@/lib/services/standings";
+import SeasonSelector from "@/app/estadisticas/season-selector";
 
 const seasonDataMinYear = 2023;
 
@@ -201,38 +202,7 @@ export default async function StatisticsPage({
                 importados.
               </p>
             </div>
-            <form
-              action="/estadisticas"
-              className="flex flex-wrap items-end gap-3"
-              method="get"
-            >
-              <div>
-                <label
-                  className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  htmlFor="season"
-                >
-                  Temporada
-                </label>
-                <select
-                  className="rounded-full border border-white/15 bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-                  defaultValue={season}
-                  id="season"
-                  name="year"
-                >
-                  {availableSeasons.map((availableSeason) => (
-                    <option key={availableSeason} value={availableSeason}>
-                      {availableSeason}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <button
-                className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-400"
-                type="submit"
-              >
-                Ver temporada
-              </button>
-            </form>
+            <SeasonSelector seasons={availableSeasons} season={season} />
           </div>
         </header>
 
