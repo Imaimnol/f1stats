@@ -2,8 +2,40 @@
 const OPENF1_BASE_URL = "https://api.openf1.org/v1";
 const OPENF1_MAX_RETRIES = 5;
 
+type OpenF1DriverHeadshot = {
+  name_acronym: string;
+  headshot_url: string | null;
+};
+
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function getLatestDriverHeadshots() {
+  const drivers = await getOpenF1<OpenF1DriverHeadshot[]>(
+    "drivers",
+    { session_key: "latest" },
+    1
+  );
+  const headshots = new Map<string, string>();
+
+  for (const driver of drivers) {
+    const acronym = driver.name_acronym?.trim().toUpperCase();
+    if (!acronym || !driver.headshot_url) {
+      continue;
+    }
+
+    try {
+      const url = new URL(driver.headshot_url);
+      if (url.protocol === "https:" && url.hostname === "media.formula1.com") {
+        headshots.set(acronym, url.toString());
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return headshots;
 }
 
 export async function getOpenF1<T>(

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import Image from "next/image";
+import { getLatestDriverHeadshots } from "@/lib/openf1";
 import { importSeason } from "@/lib/services/f1-import";
 import {
   getAvailableSeasons,
@@ -26,6 +28,7 @@ type Standing = {
   wins: number;
   podiums: number;
   starts: number;
+  imageUrl?: string;
 };
 
 type AvailableSeasonsResponse = {
@@ -82,9 +85,18 @@ function StandingsTable({
                 <td className="px-5 py-4">
                   {driverLinks ? (
                     <Link
-                      className="font-semibold text-white transition-colors hover:text-red-300"
+                      className="flex items-center gap-3 font-semibold text-white transition-colors hover:text-red-300"
                       href={`/pilotos/${row.id}`}
                     >
+                      {row.imageUrl && (
+                        <Image
+                          alt=""
+                          className="h-10 w-10 rounded-full border border-white/10 bg-slate-800 object-cover"
+                          height={40}
+                          src={row.imageUrl}
+                          width={40}
+                        />
+                      )}
                       {row.name}
                     </Link>
                   ) : (
@@ -146,6 +158,23 @@ export default async function StatisticsPage({
         error instanceof Error
           ? error.message
           : "No se pudieron importar los resultados de la temporada.";
+    }
+  }
+
+  if (season === currentSeason) {
+    try {
+      const headshots = await getLatestDriverHeadshots();
+      standings = {
+        ...standings,
+        drivers: standings.drivers.map((driver) => ({
+          ...driver,
+          imageUrl: driver.detail
+            ? headshots.get(driver.detail.toUpperCase())
+            : undefined,
+        })),
+      };
+    } catch (error) {
+      console.error("Error cargando las fotos de los pilotos:", error);
     }
   }
 
