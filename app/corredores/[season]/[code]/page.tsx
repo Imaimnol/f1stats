@@ -11,6 +11,28 @@ const pointsFormatter = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 2,
 });
 
+const carImageRevision = "94375503dc8e724e7eaae95fe3ca365da238a5dd";
+const teamCarFiles: Record<string, string> = {
+  alpine: "Alpine.webp",
+  "alpine f1 team": "Alpine.webp",
+  "aston martin": "Aston Martin.webp",
+  "aston martin aramco": "Aston Martin.webp",
+  audi: "Audi.webp",
+  "audi revolut": "Audi.webp",
+  cadillac: "Cadillac.webp",
+  ferrari: "Ferrari.webp",
+  "scuderia ferrari": "Ferrari.webp",
+  "haas f1 team": "Haas F1 Team.webp",
+  haas: "Haas F1 Team.webp",
+  mclaren: "McLaren.webp",
+  mercedes: "Mercedes.webp",
+  "racing bulls": "Racing Bulls.webp",
+  "visa cash app racing bulls": "Racing Bulls.webp",
+  "red bull racing": "Red Bull Racing.webp",
+  "oracle red bull racing": "Red Bull Racing.webp",
+  williams: "Williams.webp",
+};
+
 function DriverProfileLoading() {
   return (
     <main
@@ -76,6 +98,10 @@ async function DriverProfileContent({
     notFound();
   }
 
+  const carFile = season === 2026 ? teamCarFiles[driver.team.toLowerCase()] : null;
+  const carImageUrl = carFile
+    ? `https://raw.githubusercontent.com/TracingInsights/2026/${carImageRevision}/images/cars/${encodeURIComponent(carFile)}`
+    : null;
   const driverName = `${driver.firstName} ${driver.lastName}`;
   const results = profile?.results ?? [];
   const seasonResults = results.filter(
@@ -131,8 +157,24 @@ async function DriverProfileContent({
   ];
 
   return (
-    <main className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14">
-      <div className="mx-auto max-w-5xl">
+    <main className="relative min-h-screen isolate bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14">
+      {carImageUrl && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+        >
+          <Image
+            alt=""
+            className="object-contain object-center sm:object-right-top"
+            fill
+            loading="eager"
+            sizes="100vw"
+            src={carImageUrl}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/45 via-slate-950/75 to-slate-950" />
+        </div>
+      )}
+      <div className="relative z-10 mx-auto max-w-5xl">
         <Link
           href={`/corredores?year=${season}`}
           className="text-sm font-semibold text-red-300 transition-colors hover:text-red-200"
@@ -141,10 +183,10 @@ async function DriverProfileContent({
         </Link>
 
         <section
-          className="relative mt-8 min-h-[26rem] overflow-hidden rounded-3xl border bg-slate-900 sm:min-h-[32rem]"
+          className="relative mt-8 min-h-[26rem] overflow-hidden rounded-3xl border bg-slate-900/35 sm:min-h-[32rem]"
           style={{
             borderColor: `${driver.teamColor}70`,
-            background: `linear-gradient(115deg, ${driver.teamColor}55 0%, #0f172a 68%)`,
+            background: `linear-gradient(115deg, ${driver.teamColor}70 0%, rgb(15 23 42 / 45%) 75%)`,
           }}
         >
           {driver.headshotUrl && (
@@ -212,6 +254,19 @@ async function DriverProfileContent({
             </div>
           </div>
         </section>
+        {carImageUrl && (
+          <p className="mt-2 text-right text-xs text-slate-400">
+            Auto 2026 ·{" "}
+            <a
+              className="underline decoration-slate-500 underline-offset-2 hover:text-white"
+              href="https://github.com/TracingInsights/2026"
+              rel="noreferrer"
+              target="_blank"
+            >
+              Imágenes de TracingInsights
+            </a>
+          </p>
+        )}
 
         <section
           aria-label="Estadísticas del corredor"

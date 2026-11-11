@@ -41,7 +41,9 @@ La página `/corredores` muestra los pilotos de cada temporada, sus equipos,
 números e imágenes obtenidas de OpenF1.
 Cada tarjeta abre `/corredores/[season]/[code]`, con imagen de mayor
 resolución, identificador visual de la escudería y estadísticas de temporada y
-trayectoria calculadas a partir de resultados importados.
+trayectoria calculadas a partir de resultados importados. Los perfiles de 2026
+usan como fondo el auto de cada escudería desde las imágenes del repositorio
+[TracingInsights/2026](https://github.com/TracingInsights/2026).
 
 Desde las temporadas con resultados importados se puede abrir la clasificación
 detallada de cada carrera. Los nombres de los pilotos enlazan a
