@@ -122,7 +122,9 @@ export async function POST(request: Request) {
     (circuitId && !nextCircuitId)
   ) {
     return formData !== null
-      ? NextResponse.redirect(new URL("/perfil?error=favorite", request.url))
+      ? NextResponse.redirect(
+          new URL("/perfil?error=favorite#favoritos", request.url)
+        )
       : NextResponse.json(
           { error: "Una de las preferencias seleccionadas no existe." },
           { status: 400 }
@@ -193,7 +195,9 @@ export async function POST(request: Request) {
   }
 
   if (isFormRequest) {
-    return NextResponse.redirect(new URL("/perfil?favorites=1", request.url));
+    return NextResponse.redirect(
+      new URL("/perfil?favorites=1#favoritos", request.url)
+    );
   }
 
   return NextResponse.json({
