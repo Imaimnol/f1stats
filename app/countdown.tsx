@@ -24,7 +24,13 @@ function getCountdown(targetTime: number): CountdownParts | null {
   };
 }
 
-export default function Countdown({ date }: { date: string }) {
+export default function Countdown({
+  date,
+  compact = false,
+}: {
+  date: string;
+  compact?: boolean;
+}) {
   const targetTime = new Date(date).getTime();
   const [countdown, setCountdown] = useState<CountdownParts | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
@@ -63,18 +69,28 @@ export default function Countdown({ date }: { date: string }) {
   return (
     <div
       aria-label="Cuenta regresiva para el inicio de la carrera"
-      className="grid grid-cols-4 gap-2"
+      className={`grid grid-cols-4 ${compact ? "gap-1.5" : "gap-2"}`}
       role="timer"
     >
       {units.map((unit) => (
         <div
-          className="rounded-xl border border-red-400/20 bg-red-500/[0.06] px-2 py-3 text-center"
+          className={`rounded-xl border border-red-400/20 bg-red-500/[0.06] text-center ${
+            compact ? "px-1.5 py-2" : "px-2 py-3"
+          }`}
           key={unit.label}
         >
-          <p className="text-2xl font-bold tabular-nums text-white sm:text-3xl">
+          <p
+            className={`font-bold tabular-nums text-white ${
+              compact ? "text-lg sm:text-xl" : "text-2xl sm:text-3xl"
+            }`}
+          >
             {String(unit.value ?? 0).padStart(2, "0")}
           </p>
-          <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 sm:text-xs">
+          <p
+            className={`mt-1 font-semibold uppercase tracking-wider text-slate-400 ${
+              compact ? "text-[9px] sm:text-[10px]" : "text-[10px] sm:text-xs"
+            }`}
+          >
             {unit.label}
           </p>
         </div>

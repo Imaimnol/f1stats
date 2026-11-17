@@ -79,6 +79,7 @@ export async function getDriverProfile(driverId: string) {
         },
         select: {
           position: true,
+          grid: true,
           points: true,
           laps: true,
           status: true,
@@ -90,6 +91,7 @@ export async function getDriverProfile(driverId: string) {
               season: true,
               round: true,
               name: true,
+              date: true,
               circuit: {
                 select: { name: true },
               },
@@ -104,6 +106,10 @@ export async function getDriverProfile(driverId: string) {
     return null;
   }
 
+  const finishes = driver.results
+    .map((result) => result.position)
+    .filter((position): position is number => position !== null && position > 0);
+
   return {
     ...driver,
     stats: {
@@ -115,6 +121,16 @@ export async function getDriverProfile(driverId: string) {
           result.position !== null &&
           result.position >= 1 &&
           result.position <= 3
+      ).length,
+      poles: driver.results.filter((result) => result.grid === 1).length,
+      bestFinish: finishes.length > 0 ? Math.min(...finishes) : null,
+      avgFinish:
+        finishes.length > 0
+          ? finishes.reduce((total, position) => total + position, 0) /
+            finishes.length
+          : null,
+      dnfs: driver.results.filter(
+        (result) => result.status?.toLowerCase() === "did not finish"
       ).length,
     },
   };

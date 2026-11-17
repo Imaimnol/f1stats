@@ -10,8 +10,10 @@ import {
   getSeasonRoundsWithResults,
 } from "@/lib/services/race-results";
 import { getSeasonStandings } from "@/lib/services/standings";
+import { getCircuitLayout } from "@/lib/services/circuit-layout";
 import HomeMenu from "@/app/home-menu";
 import Countdown from "@/app/countdown";
+import RaceCircuit from "@/app/race-circuit";
 
 const pointsFormatter = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 2,
@@ -149,6 +151,23 @@ export default async function Home() {
     calendar?.races.find(
       (race) => new Date(race.dateStart).getTime() > serverNow
     ) ?? null;
+  const seasonProgress =
+    nextRace && calendar && calendar.races.length > 1
+      ? Math.round(
+          ((nextRace.round - 1) / (calendar.races.length - 1)) * 100
+        )
+      : 0;
+  let circuitPoints: Awaited<ReturnType<typeof getCircuitLayout>> | null = null;
+  let circuitLayoutError: string | null = null;
+  if (nextRace) {
+    try {
+      circuitPoints = await getCircuitLayout(nextRace.circuitKey, season);
+    } catch (error) {
+      console.error("Error cargando el trazado de la próxima carrera:", error);
+      circuitLayoutError =
+        "No se pudo cargar el trazado del circuito desde MultiViewer.";
+    }
+  }
   const completedRaces =
     calendar?.races
       .filter(
@@ -221,15 +240,61 @@ export default async function Home() {
             </div>
             {nextRace ? (
               <div className="p-5 sm:p-6">
-                <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-                  {nextRace.circuitShortName} Grand Prix
-                </h2>
-                <p className="mt-2 text-sm text-slate-400">
-                  {nextRace.location}, {nextRace.countryName} ·{" "}
-                  {raceDateFormatter.format(new Date(nextRace.dateStart))} (UTC)
-                </p>
-                <div className="mt-6 rounded-xl border border-white/[0.06] bg-[#191a20] p-4">
-                  <Countdown date={nextRace.dateStart} />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      {season} Schedule
+                    </p>
+                    <h2 className="mt-1 flex items-center gap-2 text-2xl font-extrabold tracking-tight sm:text-3xl">
+                      {nextRace.countryName.toLowerCase().includes("united states") && (
+                        <span aria-label="Estados Unidos" role="img">
+                          🇺🇸
+                        </span>
+                      )}
+                      {nextRace.circuitShortName}
+                    </h2>
+                    <p className="mt-1 text-sm font-semibold text-slate-300">
+                      {nextRace.location}, {nextRace.countryName}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {raceDateFormatter.format(new Date(nextRace.dateStart))} (UTC)
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center justify-center sm:w-52">
+                    <RaceCircuit
+                      circuit={nextRace.circuitShortName}
+                      points={circuitPoints}
+                    />
+                  </div>
+                </div>
+                {circuitLayoutError && (
+                  <p className="mt-2 text-right text-[10px] text-slate-500">
+                    {circuitLayoutError}
+                  </p>
+                )}
+                <div className="mt-4 flex max-w-64 items-center gap-3">
+                  <div
+                    aria-label={`${seasonProgress}% de temporada completada`}
+                    className="h-2 flex-1 overflow-hidden rounded-full bg-slate-800"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={seasonProgress}
+                  >
+                    <div
+                      className="h-full rounded-full bg-emerald-400"
+                      style={{ width: `${seasonProgress}%` }}
+                    />
+                  </div>
+                  <span className="whitespace-nowrap text-xs text-slate-400">
+                    {seasonProgress}% de temporada
+                  </span>
+                </div>
+                <div className="mt-4 border-t border-white/[0.06] pt-4">
+                  <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                    Cuenta regresiva
+                  </p>
+                  <Countdown compact date={nextRace.dateStart} />
                 </div>
                 <Link
                   className="mt-5 inline-flex text-sm font-semibold text-slate-300 transition-colors hover:text-white"
@@ -337,7 +402,8 @@ export default async function Home() {
         </div>
 
         <p className="mt-7 text-center text-xs text-slate-600">
-          Calendario proporcionado por OpenF1 · Temporada {season}
+          Calendario proporcionado por OpenF1 · Trazados por MultiViewer ·
+          Temporada {season}
         </p>
       </div>
     </main>
