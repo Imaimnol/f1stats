@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function HomeMenu({
   currentUser,
@@ -9,100 +12,173 @@ export default function HomeMenu({
   season: number;
   seasons: number[];
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [isOpen]);
+
   return (
-    <details className="group relative z-20 shrink-0">
-      <summary className="flex cursor-pointer list-none items-center gap-3 rounded-xl border border-white/15 bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:border-red-400/50 [&::-webkit-details-marker]:hidden">
+    <>
+      <button
+        aria-controls="home-navigation-drawer"
+        aria-expanded={isOpen}
+        aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
+        className="flex shrink-0 items-center gap-3 rounded-xl border border-white/15 bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:border-red-400/50"
+        onClick={() => setIsOpen((open) => !open)}
+        type="button"
+      >
         <span aria-hidden="true" className="flex w-5 flex-col gap-1">
           <span className="h-0.5 w-5 rounded-full bg-current" />
           <span className="h-0.5 w-5 rounded-full bg-current" />
           <span className="h-0.5 w-5 rounded-full bg-current" />
         </span>
         Menú
-      </summary>
-      <div className="absolute right-0 top-full mt-3 w-[min(20rem,calc(100vw-2.5rem))] rounded-2xl border border-white/10 bg-slate-900 p-4 shadow-2xl shadow-black/40">
-        <nav aria-label="Navegación principal" className="grid gap-1">
-          {[
-            { href: "/estadisticas", label: "Campeonatos" },
-            { href: "/ranking", label: "Ranking" },
-            { href: "/corredores", label: "Corredores" },
-          ].map((item) => (
-            <Link
-              className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:bg-white/[0.06] hover:text-white"
-              href={item.href}
-              key={item.href}
-            >
-              {item.label}
-            </Link>
-          ))}
-          {currentUser ? (
-            <>
-              <Link
-                className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:bg-white/[0.06] hover:text-white"
-                href="/perfil"
-              >
-                Mi perfil
-              </Link>
-              <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/10 px-3 pt-4">
-                <span className="min-w-0 truncate text-sm font-semibold text-red-100">
-                  Hola, {currentUser.username}
-                </span>
-                <form action="/api/auth/logout" method="post">
-                  <button
-                    className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-200 transition-colors hover:border-red-400/40 hover:text-white"
-                    type="submit"
-                  >
-                    Salir
-                  </button>
-                </form>
-              </div>
-            </>
-          ) : (
-            <div className="mt-2 grid grid-cols-2 gap-2 border-t border-white/10 pt-4">
-              <Link
-                className="rounded-full border border-white/15 px-3 py-2 text-center text-sm font-semibold text-slate-200 transition-colors hover:border-red-400/40 hover:text-white"
-                href="/login"
-              >
-                Ingresar
-              </Link>
-              <Link
-                className="rounded-full bg-red-500 px-3 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-red-400"
-                href="/register"
-              >
-                Registrarse
-              </Link>
-            </div>
-          )}
-        </nav>
+      </button>
 
-        <form action="/estadisticas" className="mt-4 border-t border-white/10 pt-4" method="get">
-          <label
-            className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400"
-            htmlFor="season"
-          >
-            Temporada
-          </label>
-          <div className="flex gap-2">
-            <select
-              className="min-w-0 flex-1 rounded-full border border-white/15 bg-slate-950 px-3 py-2 text-sm font-semibold text-white"
-              defaultValue={season}
-              id="season"
-              name="year"
-            >
-              {seasons.map((availableSeason) => (
-                <option key={availableSeason} value={availableSeason}>
-                  Temporada {availableSeason}
-                </option>
-              ))}
-            </select>
+      <div
+        aria-hidden={!isOpen}
+        className={`fixed inset-0 z-50 ${isOpen ? "" : "pointer-events-none"}`}
+        id="home-navigation-drawer"
+        inert={!isOpen}
+      >
+        <button
+          aria-label="Cerrar menú"
+          className={`absolute inset-0 size-full bg-black/60 transition-opacity duration-300 ${
+            isOpen ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={() => setIsOpen(false)}
+          tabIndex={isOpen ? 0 : -1}
+          type="button"
+        />
+        <aside
+          aria-label="Menú de navegación"
+          className={`absolute inset-y-0 right-0 flex w-[min(24rem,88vw)] flex-col border-l border-white/10 bg-slate-950 p-6 shadow-2xl shadow-black/50 transition-transform duration-300 ease-out ${
+            isOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          <div className="flex items-center justify-between border-b border-white/10 pb-5">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-red-400">
+                F1 Stats
+              </p>
+              <h2 className="mt-1 text-lg font-semibold text-white">
+                Navegación
+              </h2>
+            </div>
             <button
-              className="rounded-full bg-red-500 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-400"
-              type="submit"
+              aria-label="Cerrar menú"
+              className="flex size-10 items-center justify-center rounded-full border border-white/15 text-xl text-slate-200 transition-colors hover:border-red-400/50 hover:text-white"
+              onClick={() => setIsOpen(false)}
+              type="button"
             >
-              Ver
+              ×
             </button>
           </div>
-        </form>
+
+          <nav aria-label="Navegación principal" className="mt-5 grid gap-2">
+            {[
+              { href: "/estadisticas", label: "Campeonatos" },
+              { href: "/ranking", label: "Ranking" },
+              { href: "/corredores", label: "Corredores" },
+            ].map((item) => (
+              <Link
+                className="rounded-xl px-4 py-3 text-base font-medium text-slate-200 transition-colors hover:bg-white/[0.06] hover:text-white"
+                href={item.href}
+                key={item.href}
+                onClick={() => setIsOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
+            {currentUser ? (
+              <>
+                <Link
+                  className="rounded-xl px-4 py-3 text-base font-medium text-slate-200 transition-colors hover:bg-white/[0.06] hover:text-white"
+                  href="/perfil"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Mi perfil
+                </Link>
+                <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/10 px-4 pt-5">
+                  <span className="min-w-0 truncate text-sm font-semibold text-red-100">
+                    Hola, {currentUser.username}
+                  </span>
+                  <form action="/api/auth/logout" method="post">
+                    <button
+                      className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-200 transition-colors hover:border-red-400/40 hover:text-white"
+                      type="submit"
+                    >
+                      Salir
+                    </button>
+                  </form>
+                </div>
+              </>
+            ) : (
+              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-white/10 pt-5">
+                <Link
+                  className="rounded-full border border-white/15 px-3 py-2.5 text-center text-sm font-semibold text-slate-200 transition-colors hover:border-red-400/40 hover:text-white"
+                  href="/login"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Ingresar
+                </Link>
+                <Link
+                  className="rounded-full bg-red-500 px-3 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-red-400"
+                  href="/register"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Registrarse
+                </Link>
+              </div>
+            )}
+          </nav>
+
+          <form
+            action="/estadisticas"
+            className="mt-5 border-t border-white/10 pt-5"
+            method="get"
+          >
+            <label
+              className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400"
+              htmlFor="season"
+            >
+              Temporada
+            </label>
+            <div className="flex gap-2">
+              <select
+                className="min-w-0 flex-1 rounded-full border border-white/15 bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white"
+                defaultValue={season}
+                id="season"
+                name="year"
+              >
+                {seasons.map((availableSeason) => (
+                  <option key={availableSeason} value={availableSeason}>
+                    Temporada {availableSeason}
+                  </option>
+                ))}
+              </select>
+              <button
+                className="rounded-full bg-red-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-400"
+                type="submit"
+              >
+                Ver
+              </button>
+            </div>
+          </form>
+        </aside>
       </div>
-    </details>
+    </>
   );
 }

@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import {
   getSeasonRaceCalendar,
   importSeason,
+  refreshCompletedSeasonResults,
 } from "@/lib/services/f1-import";
 import { getSeasonRoundsWithResults } from "@/lib/services/race-results";
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/lib/services/predictions";
 import { getSeasonStandings } from "@/lib/services/standings";
 import HomeMenu from "@/app/home-menu";
+import Countdown from "@/app/countdown";
 
 const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   day: "numeric",
@@ -72,7 +74,21 @@ export default async function Home({
   let roundsWithResults = await getSeasonRoundsWithResults(season);
   let importError: string | null = null;
 
-  if (roundsWithResults.size === 0 && season >= firstAvailableSeason) {
+  if (season === currentYear) {
+    try {
+      const summary = await refreshCompletedSeasonResults(season);
+      roundsWithResults = await getSeasonRoundsWithResults(season);
+      if (summary.failures.length > 0) {
+        importError = `No se pudieron actualizar ${summary.failures.length} carreras.`;
+      }
+    } catch (error) {
+      console.error("Error actualizando resultados de la temporada:", error);
+      importError =
+        error instanceof Error
+          ? error.message
+          : "No se pudieron actualizar los resultados de la temporada.";
+    }
+  } else if (roundsWithResults.size === 0 && season >= firstAvailableSeason) {
     try {
       const summary = await importSeason(season);
       roundsWithResults = await getSeasonRoundsWithResults(season);
@@ -102,13 +118,6 @@ export default async function Home({
       (race) => new Date(race.dateStart).getTime() >= serverNow
     ) ?? null;
   const nextRaceDate = nextRace ? new Date(nextRace.dateStart) : null;
-  const countdownDays = nextRaceDate
-    ? Math.max(
-        0,
-        Math.ceil((nextRaceDate.getTime() - serverNow) / (1000 * 60 * 60 * 24))
-      )
-    : null;
-
   let predictionSetup: {
       race: Awaited<ReturnType<typeof preparePredictionRace>>;
       drivers: Awaited<ReturnType<typeof getPredictionDrivers>>;
@@ -196,14 +205,14 @@ export default async function Home({
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-300">
-                  Mi fin de semana de F1
+                  Próxima carrera · Ronda {nextRace.round}
                 </p>
                 <h2 className="mt-2 text-2xl font-bold text-white">
-                  Próximo GP
+                  {nextRace.circuitShortName}
                 </h2>
               </div>
-              <div className="inline-flex rounded-full border border-red-400/30 bg-red-500/10 px-3 py-1.5 text-sm font-semibold text-red-100">
-                {countdownDays === 0 ? "Hoy" : `En ${countdownDays} días`}
+              <div className="w-full sm:max-w-md">
+                <Countdown date={nextRace.dateStart} />
               </div>
             </div>
 
@@ -234,7 +243,7 @@ export default async function Home({
                   Carrera principal (UTC)
                 </p>
                 <p className="mt-4 text-sm text-red-200">
-                  {Math.max(0, countdownDays ?? 0)} días para vivir el fin de semana.
+                  Tiempo restante para el inicio de la carrera.
                 </p>
               </div>
             </div>

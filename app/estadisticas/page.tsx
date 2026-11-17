@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { getLatestDriverInfo } from "@/lib/openf1";
-import { importSeason } from "@/lib/services/f1-import";
+import {
+  importSeason,
+  refreshCompletedSeasonResults,
+} from "@/lib/services/f1-import";
 import {
   getAvailableSeasons,
   getSeasonStandings,
@@ -150,7 +153,21 @@ export default async function StatisticsPage({
 
   let standings = await getSeasonStandings(season);
   let importError: string | null = null;
-  if (standings.races === 0) {
+  if (season === currentSeason) {
+    try {
+      const summary = await refreshCompletedSeasonResults(season);
+      standings = await getSeasonStandings(season);
+      if (summary.failures.length > 0) {
+        importError = `No se pudieron actualizar ${summary.failures.length} carreras.`;
+      }
+    } catch (error) {
+      console.error("Error actualizando resultados de la temporada:", error);
+      importError =
+        error instanceof Error
+          ? error.message
+          : "No se pudieron actualizar los resultados de la temporada.";
+    }
+  } else if (standings.races === 0) {
     try {
       const summary = await importSeason(season);
       standings = await getSeasonStandings(season);

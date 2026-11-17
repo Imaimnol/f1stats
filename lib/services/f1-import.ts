@@ -65,6 +65,21 @@ type SeasonImportSummary = {
 };
 
 let lastRateLimitedRequestAt = 0;
+const seasonRefreshCache = new Map<
+  number,
+  { checkedAt: number; result: CompletedSeasonRefresh }
+>();
+const seasonRefreshInFlight = new Map<
+  number,
+  Promise<CompletedSeasonRefresh>
+>();
+const seasonRefreshTtlMs = 10 * 60 * 1000;
+
+type CompletedSeasonRefresh = {
+  refreshedRaces: number;
+  skippedWithoutResults: number;
+  failures: Array<{ round: number; error: string }>;
+};
 
 function delay(milliseconds: number) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -591,6 +606,141 @@ export async function importRaceBySessionKey(
     drivers: importedDrivers,
     results: importedResults,
   };
+}
+
+export async function refreshCompletedSeasonResults(year: number) {
+  if (
+    !Number.isInteger(year) ||
+    year < 2023 ||
+    year > new Date().getFullYear()
+  ) {
+    throw new Error("La temporada debe ser un año entre 2023 y el año actual");
+  }
+
+  const cached = seasonRefreshCache.get(year);
+  if (cached && Date.now() - cached.checkedAt < seasonRefreshTtlMs) {
+    return cached.result;
+  }
+
+  const pending = seasonRefreshInFlight.get(year);
+  if (pending) {
+    return pending;
+  }
+
+  const refresh = (async (): Promise<CompletedSeasonRefresh> => {
+    const seasonCalendar = await getSeasonRaceCalendar(year);
+    const [meetings, importedRounds] = await Promise.all([
+      getOpenF1RateLimited<OpenF1Meeting[]>("meetings", {
+        year: String(year),
+      }),
+      prisma.race.findMany({
+        where: {
+          season: year,
+          results: { some: {} },
+        },
+        select: { round: true },
+      }),
+    ]);
+
+    const now = Date.now();
+    const completedRaces = seasonCalendar.races.filter(
+      (race) => new Date(race.dateStart).getTime() < now - 4 * 60 * 60 * 1000
+    );
+    const importedRoundSet = new Set(
+      importedRounds.map((race) => race.round)
+    );
+    const latestCompletedRound =
+      completedRaces.at(-1)?.round ?? null;
+    const racesToRefresh = completedRaces.filter(
+      (race) =>
+        !importedRoundSet.has(race.round) ||
+        race.round === latestCompletedRound
+    );
+    const summary: CompletedSeasonRefresh = {
+      refreshedRaces: 0,
+      skippedWithoutResults: 0,
+      failures: [],
+    };
+
+    for (const race of racesToRefresh) {
+      try {
+        let results: OpenF1Result[];
+        try {
+          results = await getOpenF1RateLimited<OpenF1Result[]>(
+            "session_result",
+            { session_key: String(race.sessionKey) }
+          );
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            error.message.includes(
+              "OpenF1 respondió con error 404: session_result"
+            )
+          ) {
+            summary.skippedWithoutResults++;
+            continue;
+          }
+          throw error;
+        }
+
+        if (results.length === 0) {
+          summary.skippedWithoutResults++;
+          continue;
+        }
+
+        const drivers = await getOpenF1RateLimited<OpenF1Driver[]>("drivers", {
+          session_key: String(race.sessionKey),
+        });
+        const session: OpenF1Session = {
+          session_key: race.sessionKey,
+          session_name: "Race",
+          session_type: "Race",
+          meeting_key: race.meetingKey,
+          circuit_key: race.circuitKey,
+          circuit_short_name: race.circuitShortName,
+          country_name: race.countryName,
+          location: race.location,
+          date_start: race.dateStart,
+          year,
+          is_cancelled: false,
+        };
+
+        await importRaceBySessionKey(race.sessionKey, {
+          session,
+          meetings,
+          drivers,
+          results,
+          seasonCalendar,
+        });
+        summary.refreshedRaces++;
+      } catch (error) {
+        summary.failures.push({
+          round: race.round,
+          error: error instanceof Error ? error.message : "Error desconocido",
+        });
+      }
+    }
+
+    for (const failure of summary.failures) {
+      console.error(
+        `Error actualizando resultados de la ronda ${failure.round} de ${year}:`,
+        failure.error
+      );
+    }
+
+    return summary;
+  })();
+
+  seasonRefreshInFlight.set(year, refresh);
+  try {
+    const result = await refresh;
+    if (result.failures.length === 0) {
+      seasonRefreshCache.set(year, { checkedAt: Date.now(), result });
+    }
+    return result;
+  } finally {
+    seasonRefreshInFlight.delete(year);
+  }
 }
 
 export async function importSeasons(years: number[]) {
