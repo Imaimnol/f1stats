@@ -11,6 +11,8 @@ import {
   getUserRacePrediction,
   preparePredictionRace,
 } from "@/lib/services/predictions";
+import { getSeasonStandings } from "@/lib/services/standings";
+import HomeMenu from "@/app/home-menu";
 
 const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   day: "numeric",
@@ -29,6 +31,10 @@ const timeFormatter = new Intl.DateTimeFormat("es-AR", {
   hour: "2-digit",
   minute: "2-digit",
   timeZone: "UTC",
+});
+
+const pointsFormatter = new Intl.NumberFormat("es-AR", {
+  maximumFractionDigits: 2,
 });
 
 const firstAvailableSeason = 2023;
@@ -81,6 +87,8 @@ export default async function Home({
           : "No se pudo importar la temporada desde OpenF1.";
     }
   }
+
+  const standings = await getSeasonStandings(season);
 
   const calendar = await getSeasonRaceCalendar(season).catch(
     (error: unknown) => {
@@ -160,108 +168,27 @@ export default async function Home({
   return (
     <main className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14">
       <div className="mx-auto max-w-5xl">
-        <header className="mb-10 border-b border-white/10 pb-8 sm:mb-12 sm:pb-10">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-red-400">
-            F1 Stats
-          </p>
-          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+        <header className="mb-8 flex items-center justify-between gap-4 border-b border-white/10 pb-6 sm:mb-10 sm:pb-8">
+          <div>
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-red-400">
+              F1 Stats
+            </p>
             <div>
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-                Calendario de carreras
+                Temporada {calendar.season}
               </h1>
-              <p className="mt-3 max-w-xl text-base leading-7 text-slate-300">
-                Todas las carreras de la temporada, con fechas, circuitos y
-                resultados disponibles.
+              <p className="mt-2 max-w-xl text-base leading-7 text-slate-300">
+                Campeonatos y próxima carrera de Fórmula 1.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Link
-                href="/estadisticas"
-                className="w-fit rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-red-400/40 hover:text-white"
-              >
-                Ver campeonatos
-              </Link>
-              <Link
-                href="/ranking"
-                className="w-fit rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-red-400/40 hover:text-white"
-              >
-                Ranking
-              </Link>
-              <Link
-                href="/corredores"
-                className="w-fit rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-red-400/40 hover:text-white"
-              >
-                Corredores
-              </Link>
-
-              {currentUser ? (
-                <>
-                  <Link
-                    className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-red-400/40 hover:text-white"
-                    href="/perfil"
-                  >
-                    Mi perfil
-                  </Link>
-                  <div className="flex items-center gap-3 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-2">
-                    <span className="text-sm font-semibold text-red-100">
-                      Hola, {currentUser.username}
-                    </span>
-                    <form action="/api/auth/logout" method="post">
-                      <button
-                        className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-200 transition-colors hover:border-red-400/40 hover:text-white"
-                        type="submit"
-                      >
-                        Salir
-                      </button>
-                    </form>
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Link
-                    href="/login"
-                    className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-red-400/40 hover:text-white"
-                  >
-                    Ingresar
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-400"
-                  >
-                    Registrarse
-                  </Link>
-                </div>
-              )}
-
-              <form
-                action="/estadisticas"
-                className="flex items-center gap-2"
-                method="get"
-              >
-                <label className="sr-only" htmlFor="season">
-                  Elegir temporada
-                </label>
-                <select
-                  className="rounded-full border border-white/15 bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-                  defaultValue={season}
-                  id="season"
-                  name="year"
-                >
-                  {seasons.map((availableSeason) => (
-                    <option key={availableSeason} value={availableSeason}>
-                      Temporada {availableSeason}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-400"
-                  type="submit"
-                >
-                  Ver campeonato
-                </button>
-              </form>
-            </div>
           </div>
+          <HomeMenu
+            currentUser={
+              currentUser ? { username: currentUser.username } : null
+            }
+            season={season}
+            seasons={seasons}
+          />
         </header>
 
         {nextRace && nextRaceDate ? (
@@ -447,6 +374,74 @@ export default async function Home({
             </p>
           </section>
         )}
+
+        <section
+          aria-label={`Campeonatos de la temporada ${season}`}
+          className="mb-8 grid gap-4 lg:grid-cols-2"
+        >
+          {[
+            {
+              title: "Campeonato de pilotos",
+              rows: standings.drivers,
+              driverLinks: true,
+            },
+            {
+              title: "Campeonato de constructores",
+              rows: standings.constructors,
+              driverLinks: false,
+            },
+          ].map((championship) => (
+            <section
+              className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"
+              key={championship.title}
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
+                <h2 className="font-semibold">{championship.title}</h2>
+                <Link
+                  className="shrink-0 text-xs font-semibold text-red-300 transition-colors hover:text-red-200"
+                  href={`/estadisticas?year=${season}`}
+                >
+                  Ver tabla →
+                </Link>
+              </div>
+              {championship.rows.length ? (
+                <ol className="divide-y divide-white/10">
+                  {championship.rows.slice(0, 5).map((row, index) => (
+                    <li
+                      className="flex items-center justify-between gap-4 px-5 py-3"
+                      key={row.id}
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="w-5 shrink-0 text-sm font-bold tabular-nums text-red-300">
+                          {index + 1}
+                        </span>
+                        {championship.driverLinks ? (
+                          <Link
+                            className="truncate font-medium text-white transition-colors hover:text-red-200"
+                            href={`/pilotos/${row.id}`}
+                          >
+                            {row.name}
+                          </Link>
+                        ) : (
+                          <span className="truncate font-medium text-white">
+                            {row.name}
+                          </span>
+                        )}
+                      </div>
+                      <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-200">
+                        {pointsFormatter.format(row.points)} pts
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="px-5 py-6 text-sm text-slate-400">
+                  Todavía no hay resultados para esta temporada.
+                </p>
+              )}
+            </section>
+          ))}
+        </section>
 
         {predictionResult && (
           <p
