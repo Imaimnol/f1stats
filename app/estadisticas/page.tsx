@@ -221,7 +221,7 @@ export default async function StatisticsPage({
                 F1 Stats
               </p>
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-                Campeonatos
+                Temporadas
               </h1>
               <p className="mt-3 max-w-xl text-base leading-7 text-slate-300">
                 Posiciones de pilotos y constructores según los resultados

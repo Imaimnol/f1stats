@@ -5,12 +5,8 @@ import { useEffect, useState } from "react";
 
 export default function HomeMenu({
   currentUser,
-  season,
-  seasons,
 }: {
   currentUser: { username: string } | null;
-  season: number;
-  seasons: number[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -30,7 +26,7 @@ export default function HomeMenu({
   }, [isOpen]);
 
   return (
-    <>
+    <div className="flex shrink-0 items-center gap-3">
       <button
         aria-controls="home-navigation-drawer"
         aria-expanded={isOpen}
@@ -44,8 +40,28 @@ export default function HomeMenu({
           <span className="h-0.5 w-5 rounded-full bg-current" />
           <span className="h-0.5 w-5 rounded-full bg-current" />
         </span>
-        Menú
+        <span className="hidden sm:inline">Menú</span>
       </button>
+      <Link
+        aria-label={currentUser ? "Mi perfil" : "Iniciar sesión"}
+        className="flex size-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-slate-900 text-slate-200 transition-colors hover:border-red-400/50 hover:text-white"
+        href={currentUser ? "/perfil" : "/login"}
+        title={currentUser ? "Mi perfil" : "Iniciar sesión"}
+      >
+        <svg
+          aria-hidden="true"
+          className="size-5"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+          viewBox="0 0 24 24"
+        >
+          <circle cx="12" cy="8" r="4" />
+          <path d="M5 21a7 7 0 0 1 14 0" />
+        </svg>
+      </Link>
 
       <div
         aria-hidden={!isOpen}
@@ -89,9 +105,10 @@ export default function HomeMenu({
 
           <nav aria-label="Navegación principal" className="mt-5 grid gap-2">
             {[
-              { href: "/estadisticas", label: "Campeonatos" },
+              { href: "/estadisticas", label: "Temporadas" },
               { href: "/ranking", label: "Ranking" },
               { href: "/corredores", label: "Corredores" },
+              { href: "/prediccion", label: "Mi predicción" },
             ].map((item) => (
               <Link
                 className="rounded-xl px-4 py-3 text-base font-medium text-slate-200 transition-colors hover:bg-white/[0.06] hover:text-white"
@@ -126,16 +143,9 @@ export default function HomeMenu({
                 </div>
               </>
             ) : (
-              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-white/10 pt-5">
+              <div className="mt-2 border-t border-white/10 pt-5">
                 <Link
-                  className="rounded-full border border-white/15 px-3 py-2.5 text-center text-sm font-semibold text-slate-200 transition-colors hover:border-red-400/40 hover:text-white"
-                  href="/login"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Ingresar
-                </Link>
-                <Link
-                  className="rounded-full bg-red-500 px-3 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-red-400"
+                  className="block rounded-full bg-red-500 px-3 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-red-400"
                   href="/register"
                   onClick={() => setIsOpen(false)}
                 >
@@ -144,41 +154,8 @@ export default function HomeMenu({
               </div>
             )}
           </nav>
-
-          <form
-            action="/estadisticas"
-            className="mt-5 border-t border-white/10 pt-5"
-            method="get"
-          >
-            <label
-              className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400"
-              htmlFor="season"
-            >
-              Temporada
-            </label>
-            <div className="flex gap-2">
-              <select
-                className="min-w-0 flex-1 rounded-full border border-white/15 bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white"
-                defaultValue={season}
-                id="season"
-                name="year"
-              >
-                {seasons.map((availableSeason) => (
-                  <option key={availableSeason} value={availableSeason}>
-                    Temporada {availableSeason}
-                  </option>
-                ))}
-              </select>
-              <button
-                className="rounded-full bg-red-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-400"
-                type="submit"
-              >
-                Ver
-              </button>
-            </div>
-          </form>
         </aside>
       </div>
-    </>
+    </div>
   );
 }

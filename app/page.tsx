@@ -3,561 +3,341 @@ import { connection } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import {
   getSeasonRaceCalendar,
-  importSeason,
   refreshCompletedSeasonResults,
 } from "@/lib/services/f1-import";
-import { getSeasonRoundsWithResults } from "@/lib/services/race-results";
 import {
-  getPredictionDrivers,
-  getUserRacePrediction,
-  preparePredictionRace,
-} from "@/lib/services/predictions";
+  getRaceResults,
+  getSeasonRoundsWithResults,
+} from "@/lib/services/race-results";
 import { getSeasonStandings } from "@/lib/services/standings";
 import HomeMenu from "@/app/home-menu";
 import Countdown from "@/app/countdown";
 
-const dateFormatter = new Intl.DateTimeFormat("es-AR", {
-  day: "numeric",
-  month: "long",
-  timeZone: "UTC",
+const pointsFormatter = new Intl.NumberFormat("es-AR", {
+  maximumFractionDigits: 2,
 });
 
-const dayAndDateFormatter = new Intl.DateTimeFormat("es-AR", {
+const raceDateFormatter = new Intl.DateTimeFormat("es-AR", {
   weekday: "long",
   day: "numeric",
   month: "long",
   timeZone: "UTC",
 });
 
-const timeFormatter = new Intl.DateTimeFormat("es-AR", {
-  hour: "2-digit",
-  minute: "2-digit",
-  timeZone: "UTC",
-});
+type StandingRow = Awaited<
+  ReturnType<typeof getSeasonStandings>
+>["drivers"][number];
 
-const pointsFormatter = new Intl.NumberFormat("es-AR", {
-  maximumFractionDigits: 2,
-});
-
-const firstAvailableSeason = 2023;
-
-export default async function Home({
-  searchParams,
+function StandingsPanel({
+  title,
+  rows,
+  season,
+  driverLinks = false,
 }: {
-  searchParams: Promise<{
-    year?: string | string[];
-    prediction?: string | string[];
-  }>;
+  title: string;
+  rows: StandingRow[];
+  season: number;
+  driverLinks?: boolean;
 }) {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#111217] shadow-xl shadow-black/20">
+      <header className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
+        <h2 className="text-base font-bold tracking-wide text-white sm:text-lg">
+          {title}
+        </h2>
+        <Link
+          className="shrink-0 text-xs font-semibold text-slate-400 transition-colors hover:text-red-300"
+          href={`/estadisticas?year=${season}`}
+        >
+          Tabla completa <span aria-hidden="true">→</span>
+        </Link>
+      </header>
+      {rows.length ? (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[360px] text-left text-sm">
+            <thead className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
+              <tr>
+                <th className="w-14 px-5 py-3 font-semibold">Pos.</th>
+                <th className="px-3 py-3 font-semibold">Nombre</th>
+                <th className="px-5 py-3 text-right font-semibold">Puntos</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.06]">
+              {rows.slice(0, 5).map((row, index) => (
+                <tr
+                  className="transition-colors hover:bg-white/[0.03]"
+                  key={row.id}
+                >
+                  <td className="px-5 py-3.5 font-bold tabular-nums text-red-300">
+                    {String(index + 1).padStart(2, "0")}
+                  </td>
+                  <td className="px-3 py-3.5">
+                    {driverLinks ? (
+                      <Link
+                        className="font-semibold text-white transition-colors hover:text-red-200"
+                        href={`/pilotos/${row.id}`}
+                      >
+                        {row.name}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-white">
+                        {row.name}
+                      </span>
+                    )}
+                    {row.detail && (
+                      <span className="ml-2 text-xs text-slate-500">
+                        {row.detail}
+                      </span>
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-5 py-3.5 text-right font-bold tabular-nums text-slate-200">
+                    {pointsFormatter.format(row.points)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="px-5 py-8 text-sm text-slate-400">
+          Todavía no hay resultados para esta temporada.
+        </p>
+      )}
+    </section>
+  );
+}
+
+export default async function Home() {
   await connection();
 
+  const season = new Date().getFullYear();
   const serverNow = new Date().getTime();
-  const currentYear = new Date().getFullYear();
-  const query = await searchParams;
-  const requestedSeason =
-    typeof query.year === "string" ? Number(query.year) : currentYear;
-  const isValidSeason =
-    typeof query.year === "string" &&
-    /^\d{4}$/.test(query.year) &&
-    requestedSeason >= firstAvailableSeason &&
-    requestedSeason <= currentYear;
-  const hasInvalidSeason = query.year !== undefined && !isValidSeason;
-  const season = isValidSeason ? requestedSeason : currentYear;
-  const seasons = Array.from(
-    { length: Math.max(0, currentYear - firstAvailableSeason + 1) },
-    (_, index) => currentYear - index
-  );
-  const currentUser = await getCurrentUser();
-  const predictionResult =
-    typeof query.prediction === "string" ? query.prediction : null;
-
-  let roundsWithResults = await getSeasonRoundsWithResults(season);
   let importError: string | null = null;
+  let roundsWithResults = await getSeasonRoundsWithResults(season);
 
-  if (season === currentYear) {
-    try {
-      const summary = await refreshCompletedSeasonResults(season);
-      roundsWithResults = await getSeasonRoundsWithResults(season);
-      if (summary.failures.length > 0) {
-        importError = `No se pudieron actualizar ${summary.failures.length} carreras.`;
-      }
-    } catch (error) {
-      console.error("Error actualizando resultados de la temporada:", error);
-      importError =
-        error instanceof Error
-          ? error.message
-          : "No se pudieron actualizar los resultados de la temporada.";
+  try {
+    const summary = await refreshCompletedSeasonResults(season);
+    roundsWithResults = await getSeasonRoundsWithResults(season);
+    if (summary.failures.length > 0) {
+      importError = `No se pudieron actualizar ${summary.failures.length} carreras.`;
     }
-  } else if (roundsWithResults.size === 0 && season >= firstAvailableSeason) {
-    try {
-      const summary = await importSeason(season);
-      roundsWithResults = await getSeasonRoundsWithResults(season);
-      if (summary.failures.length > 0) {
-        importError = `No se pudieron importar ${summary.failures.length} carreras.`;
-      }
-    } catch (error) {
-      console.error("Error importando la temporada desde OpenF1:", error);
-      importError =
-        error instanceof Error
-          ? error.message
-          : "No se pudo importar la temporada desde OpenF1.";
-    }
+  } catch (error) {
+    console.error("Error actualizando resultados de la temporada:", error);
+    importError =
+      error instanceof Error
+        ? error.message
+        : "No se pudieron actualizar los resultados de la temporada.";
   }
 
-  const standings = await getSeasonStandings(season);
-
-  const calendar = await getSeasonRaceCalendar(season).catch(
-    (error: unknown) => {
-      console.error("Error cargando el calendario de la temporada:", error);
-      return null;
-    }
-  );
+  const [currentUser, standings, calendarResponse] = await Promise.all([
+    getCurrentUser(),
+    getSeasonStandings(season),
+    getSeasonRaceCalendar(season)
+      .then((calendar) => ({ calendar, error: null }))
+      .catch((error: unknown) => {
+        console.error("Error cargando el calendario de la temporada:", error);
+        return {
+          calendar: null,
+          error:
+            "No se pudo cargar el calendario de carreras. Intentá nuevamente más tarde.",
+        };
+      }),
+  ]);
+  const { calendar, error: calendarError } = calendarResponse;
 
   const nextRace =
     calendar?.races.find(
-      (race) => new Date(race.dateStart).getTime() >= serverNow
+      (race) => new Date(race.dateStart).getTime() > serverNow
     ) ?? null;
-  const nextRaceDate = nextRace ? new Date(nextRace.dateStart) : null;
-  let predictionSetup: {
-      race: Awaited<ReturnType<typeof preparePredictionRace>>;
-      drivers: Awaited<ReturnType<typeof getPredictionDrivers>>;
-      prediction: Awaited<ReturnType<typeof getUserRacePrediction>>;
-  } | null = null;
-  let predictionLoadError: string | null = null;
+  const completedRaces =
+    calendar?.races
+      .filter(
+        (race) =>
+          roundsWithResults.has(race.round) &&
+          new Date(race.dateStart).getTime() <= serverNow
+      )
+      .sort(
+        (left, right) =>
+          new Date(left.dateStart).getTime() -
+          new Date(right.dateStart).getTime()
+      ) ?? [];
+  const lastRace = completedRaces[completedRaces.length - 1] ?? null;
 
-  if (currentUser && nextRace) {
+  let lastRaceDetails: Awaited<ReturnType<typeof getRaceResults>> = null;
+  let lastRaceError: string | null = null;
+  if (lastRace) {
     try {
-      const predictionRace = await preparePredictionRace(season, nextRace);
-      const [drivers, prediction] = await Promise.all([
-        getPredictionDrivers(season),
-        getUserRacePrediction(currentUser.id, predictionRace.id),
-      ]);
-      predictionSetup = {
-        race: predictionRace,
-        drivers,
-        prediction,
-      };
+      lastRaceDetails = await getRaceResults(season, lastRace.round);
     } catch (error) {
-      console.error(
-        "Error preparando la predicción de la próxima carrera:",
-        error
-      );
-      predictionLoadError =
-        "No se pudo cargar el formulario de predicción. Intentá recargar la página.";
+      console.error("Error cargando los resultados de la última carrera:", error);
+      lastRaceError = "No se pudieron cargar los resultados de la última carrera.";
     }
   }
 
-  if (!calendar) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-5 py-10 text-white">
-        <section className="w-full max-w-lg rounded-2xl border border-white/10 bg-white/[0.04] p-8 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-red-400">
-            F1 Stats
-          </p>
-          <h1 className="mt-4 text-2xl font-bold">
-            No se pudo cargar el calendario
-          </h1>
-          <p className="mt-3 leading-7 text-slate-300">
-            No logramos consultar los datos de OpenF1. Intenta recargar la
-            página en unos momentos.
-          </p>
-          <form action="/" method="get" className="mt-6">
-            <button
-              className="rounded-full bg-red-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-400"
-              type="submit"
-            >
-              Intentar de nuevo
-            </button>
-          </form>
-        </section>
-      </main>
-    );
-  }
+  const loadErrors = [importError, calendarError, lastRaceError].filter(
+    (error): error is string => error !== null
+  );
 
   return (
-    <main className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14">
-      <div className="mx-auto max-w-5xl">
-        <header className="mb-8 flex items-center justify-between gap-4 border-b border-white/10 pb-6 sm:mb-10 sm:pb-8">
-          <div>
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-red-400">
-              F1 Stats
-            </p>
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-                Temporada {calendar.season}
-              </h1>
-              <p className="mt-2 max-w-xl text-base leading-7 text-slate-300">
-                Campeonatos y próxima carrera de Fórmula 1.
-              </p>
-            </div>
-          </div>
+    <main className="min-h-screen bg-[#090a0e] px-4 py-6 text-white sm:px-8 sm:py-9">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-6 flex items-center justify-between gap-4 border-b border-white/10 pb-5 sm:mb-8 sm:pb-6">
+          <Link className="flex items-center gap-3" href="/">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-red-500 text-sm font-black italic text-white shadow-lg shadow-red-950/40">
+              F1
+            </span>
+            <span>
+              <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                Temporada {season}
+              </span>
+              <span className="mt-0.5 block text-lg font-bold tracking-tight sm:text-xl">
+                F1 Live Dashboard
+              </span>
+            </span>
+          </Link>
           <HomeMenu
             currentUser={
               currentUser ? { username: currentUser.username } : null
             }
-            season={season}
-            seasons={seasons}
           />
         </header>
 
-        {nextRace && nextRaceDate ? (
-          <section className="mb-8 overflow-hidden rounded-3xl border border-red-500/20 bg-gradient-to-br from-red-500/10 via-slate-900 to-slate-900 p-6 shadow-[0_0_30px_rgba(239,68,68,0.08)]">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-300">
-                  Próxima carrera · Ronda {nextRace.round}
-                </p>
-                <h2 className="mt-2 text-2xl font-bold text-white">
-                  {nextRace.circuitShortName}
-                </h2>
-              </div>
-              <div className="w-full sm:max-w-md">
-                <Countdown date={nextRace.dateStart} />
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  Ronda {nextRace.round}
-                </p>
-                <h3 className="mt-3 text-3xl font-bold tracking-tight text-white">
-                  {nextRace.circuitShortName}
-                </h3>
-                <p className="mt-2 text-lg text-slate-200">
-                  {nextRace.location}, {nextRace.countryName}
-                </p>
-                <p className="mt-4 text-sm text-slate-300">
-                  {dayAndDateFormatter.format(nextRaceDate)}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  Horario
-                </p>
-                <p className="mt-3 text-3xl font-bold text-white">
-                  {timeFormatter.format(nextRaceDate)}
-                </p>
-                <p className="mt-2 text-sm text-slate-300">
-                  Carrera principal (UTC)
-                </p>
-                <p className="mt-4 text-sm text-red-200">
-                  Tiempo restante para el inicio de la carrera.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              {[
-                { label: "Viernes", value: "Libres 1 y 2" },
-                { label: "Sábado", value: "Libres 3 y clasificación" },
-                { label: "Domingo", value: "Gran Premio" },
-              ].map((slot) => (
-                <div
-                  key={slot.label}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
-                >
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    {slot.label}
-                  </p>
-                  <p className="mt-2 text-sm font-medium text-slate-100">
-                    {slot.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-            <div
-              className="mt-6 rounded-2xl border border-white/10 bg-slate-950/60 p-5"
-              id="prediccion"
-            >
-              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                <div>
-                  <h3 className="text-lg font-semibold">Predice el podio</h3>
-                  <p className="mt-1 text-sm text-slate-300">
-                    3 puntos por cada posición exacta y 6 puntos extra si
-                    aciertas los tres en orden (15 puntos).
-                  </p>
-                </div>
-                <Link
-                  href="/ranking"
-                  className="text-sm font-semibold text-red-300 transition-colors hover:text-red-200"
-                >
-                  Ver ranking →
-                </Link>
-              </div>
-
-              {!currentUser ? (
-                <p className="mt-4 text-sm text-slate-300">
-                  <Link
-                    href="/login"
-                    className="font-semibold text-red-300 hover:text-red-200"
-                  >
-                    Inicia sesión
-                  </Link>{" "}
-                  para guardar tu predicción antes de que empiece la carrera.
-                </p>
-              ) : predictionLoadError ? (
-                <p className="mt-4 text-sm text-amber-200" role="alert">
-                  {predictionLoadError}
-                </p>
-              ) : predictionSetup?.drivers.length ? (
-                <form
-                  action="/api/predictions"
-                  className="mt-5 grid gap-4 sm:grid-cols-3"
-                  method="post"
-                >
-                  <input
-                    name="raceId"
-                    type="hidden"
-                    value={predictionSetup.race.id}
-                  />
-                  {[
-                    {
-                      field: "firstDriverId",
-                      label: "1.º puesto",
-                      value: predictionSetup.prediction?.firstDriverId,
-                    },
-                    {
-                      field: "secondDriverId",
-                      label: "2.º puesto",
-                      value: predictionSetup.prediction?.secondDriverId,
-                    },
-                    {
-                      field: "thirdDriverId",
-                      label: "3.º puesto",
-                      value: predictionSetup.prediction?.thirdDriverId,
-                    },
-                  ].map((position) => (
-                    <label
-                      className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                      htmlFor={position.field}
-                      key={position.field}
-                    >
-                      {position.label}
-                      <select
-                        className="mt-2 block w-full rounded-xl border border-white/15 bg-slate-900 px-3 py-2 text-sm font-medium normal-case tracking-normal text-white"
-                        defaultValue={position.value ?? ""}
-                        id={position.field}
-                        name={position.field}
-                        required
-                      >
-                        <option disabled value="">
-                          Elegí un piloto
-                        </option>
-                        {predictionSetup.drivers.map((driver) => (
-                          <option key={driver.id} value={driver.id}>
-                            {driver.firstName} {driver.lastName}
-                            {driver.code ? ` (${driver.code})` : ""}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ))}
-                  <button
-                    className="rounded-full bg-red-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-400 sm:col-span-3 sm:justify-self-start"
-                    type="submit"
-                  >
-                    {predictionSetup.prediction
-                      ? "Actualizar predicción"
-                      : "Guardar predicción"}
-                  </button>
-                </form>
-              ) : currentUser ? (
-                <p className="mt-4 text-sm text-amber-200">
-                  Todavía no hay pilotos cargados para armar una predicción.
-                </p>
-              ) : null}
-            </div>
-          </section>
-        ) : (
-          <section className="mb-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-              Mi fin de semana de F1
-            </p>
-            <h2 className="mt-3 text-2xl font-bold text-white">
-              Próximo GP no disponible
-            </h2>
-            <p className="mt-2 text-slate-300">
-              Todavía no hay una carrera próxima en esta temporada.
-            </p>
-          </section>
-        )}
-
-        <section
-          aria-label={`Campeonatos de la temporada ${season}`}
-          className="mb-8 grid gap-4 lg:grid-cols-2"
-        >
-          {[
-            {
-              title: "Campeonato de pilotos",
-              rows: standings.drivers,
-              driverLinks: true,
-            },
-            {
-              title: "Campeonato de constructores",
-              rows: standings.constructors,
-              driverLinks: false,
-            },
-          ].map((championship) => (
-            <section
-              className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"
-              key={championship.title}
-            >
-              <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
-                <h2 className="font-semibold">{championship.title}</h2>
-                <Link
-                  className="shrink-0 text-xs font-semibold text-red-300 transition-colors hover:text-red-200"
-                  href={`/estadisticas?year=${season}`}
-                >
-                  Ver tabla →
-                </Link>
-              </div>
-              {championship.rows.length ? (
-                <ol className="divide-y divide-white/10">
-                  {championship.rows.slice(0, 5).map((row, index) => (
-                    <li
-                      className="flex items-center justify-between gap-4 px-5 py-3"
-                      key={row.id}
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <span className="w-5 shrink-0 text-sm font-bold tabular-nums text-red-300">
-                          {index + 1}
-                        </span>
-                        {championship.driverLinks ? (
-                          <Link
-                            className="truncate font-medium text-white transition-colors hover:text-red-200"
-                            href={`/pilotos/${row.id}`}
-                          >
-                            {row.name}
-                          </Link>
-                        ) : (
-                          <span className="truncate font-medium text-white">
-                            {row.name}
-                          </span>
-                        )}
-                      </div>
-                      <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-200">
-                        {pointsFormatter.format(row.points)} pts
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <p className="px-5 py-6 text-sm text-slate-400">
-                  Todavía no hay resultados para esta temporada.
-                </p>
-              )}
-            </section>
-          ))}
-        </section>
-
-        {predictionResult && (
+        {loadErrors.length > 0 && (
           <p
-            className={`mb-6 rounded-xl border px-4 py-3 text-sm ${
-              predictionResult === "saved"
-                ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
-                : "border-amber-400/30 bg-amber-400/10 text-amber-200"
-            }`}
-            role={predictionResult === "saved" ? "status" : "alert"}
+            className="mb-5 rounded-xl border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3 text-sm text-amber-200"
+            role="status"
           >
-            {predictionResult === "saved"
-              ? "Tu predicción quedó guardada."
-              : predictionResult === "closed"
-                ? "El plazo para predecir esta carrera ya terminó."
-                : "No se pudo guardar la predicción. Verifica que hayas elegido tres pilotos distintos."}
+            {loadErrors.join(" ")}
           </p>
         )}
 
-        {hasInvalidSeason && (
-          <p
-            className="mb-6 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200"
-            role="alert"
-          >
-            La temporada solicitada no es válida. Elegí un año entre {firstAvailableSeason} y {currentYear}.
-          </p>
-        )}
-
-        {importError && (
-          <p
-            className="mb-6 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200"
-            role="alert"
-          >
-            No se pudieron cargar todos los resultados: {importError}
-          </p>
-        )}
-
-        {calendar.races.length === 0 ? (
-          <section className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
-            <h2 className="text-xl font-semibold">
-              Calendario todavía no disponible
-            </h2>
-            <p className="mt-2 text-slate-300">
-              OpenF1 aún no publicó carreras para la temporada {calendar.season}.
-            </p>
-          </section>
-        ) : (
-          <>
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                Temporada {calendar.season}
-              </h2>
-              <p className="text-sm text-slate-400">
-                {calendar.races.length} carreras
+        <div className="grid gap-5 lg:grid-cols-2">
+          <section className="overflow-hidden rounded-2xl border border-red-500/20 bg-[#111217] shadow-xl shadow-black/20">
+            <div className="border-b border-white/[0.06] px-5 py-4">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-300">
+                Next Race
+                {nextRace ? ` · Round ${nextRace.round}` : ""}
               </p>
             </div>
+            {nextRace ? (
+              <div className="p-5 sm:p-6">
+                <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+                  {nextRace.circuitShortName} Grand Prix
+                </h2>
+                <p className="mt-2 text-sm text-slate-400">
+                  {nextRace.location}, {nextRace.countryName} ·{" "}
+                  {raceDateFormatter.format(new Date(nextRace.dateStart))} (UTC)
+                </p>
+                <div className="mt-6 rounded-xl border border-white/[0.06] bg-[#191a20] p-4">
+                  <Countdown date={nextRace.dateStart} />
+                </div>
+                <Link
+                  className="mt-5 inline-flex text-sm font-semibold text-slate-300 transition-colors hover:text-white"
+                  href="/estadisticas"
+                >
+                  Ver temporadas <span aria-hidden="true" className="ml-2">→</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="p-6">
+                <h2 className="text-xl font-bold">Próxima carrera no disponible</h2>
+                <p className="mt-2 text-sm text-slate-400">
+                  Todavía no hay una fecha de carrera futura publicada.
+                </p>
+              </div>
+            )}
+          </section>
 
-            <ol className="grid gap-3 sm:grid-cols-2">
-              {calendar.races.map((race) => {
-                const hasResults = roundsWithResults.has(race.round);
-
-                return (
-                  <li
-                    key={race.sessionKey}
-                    className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 transition-colors hover:border-red-400/40 hover:bg-white/[0.07]"
-                  >
-                    <div className="flex min-w-0 items-start gap-4">
-                      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-red-500/15 text-sm font-bold text-red-300">
-                        {String(race.round).padStart(2, "0")}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                          Ronda {race.round}
-                        </p>
-                        <h3 className="mt-1 truncate text-lg font-semibold">
-                          {race.circuitShortName}
-                        </h3>
-                        <p className="mt-1 text-sm text-slate-300">
-                          {race.location}, {race.countryName}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-5 border-t border-white/10 pt-4">
-                      <p className="text-sm font-medium text-slate-200">
-                        {dateFormatter.format(new Date(race.dateStart))}
-                      </p>
-                      {hasResults ? (
-                        <Link
-                          href={`/resultados/${season}/${race.round}`}
-                          className="mt-3 inline-flex rounded-full border border-red-400/40 bg-red-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-red-200 transition-colors hover:border-red-300 hover:text-red-100"
+          <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#111217] shadow-xl shadow-black/20">
+            <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                Last Race
+                {lastRace ? ` · Round ${lastRace.round}` : ""}
+              </p>
+              {lastRace && (
+                <Link
+                  className="shrink-0 text-xs font-semibold text-slate-400 transition-colors hover:text-white"
+                  href={`/resultados/${season}/${lastRace.round}`}
+                >
+                  Resultados completos <span aria-hidden="true">›</span>
+                </Link>
+              )}
+            </div>
+            {lastRace && lastRaceDetails ? (
+              <div className="p-5 sm:p-6">
+                <h2 className="mb-5 text-2xl font-extrabold tracking-tight">
+                  {lastRaceDetails.name}
+                </h2>
+                <ol className="space-y-2">
+                  {lastRaceDetails.results
+                    .filter((result) => result.position !== null)
+                    .slice(0, 3)
+                    .map((result) => (
+                      <li
+                        className="flex items-center gap-3 rounded-xl bg-[#191a20] px-3 py-3"
+                        key={`${result.position}-${result.driver.firstName}-${result.driver.lastName}`}
+                      >
+                        <span
+                          className={`flex size-9 shrink-0 items-center justify-center rounded-lg text-sm font-black tabular-nums ${
+                            result.position === 1
+                              ? "bg-amber-500 text-black"
+                              : "bg-slate-800 text-slate-200"
+                          }`}
                         >
-                          Ver resultados
-                        </Link>
-                      ) : (
-                        <p className="mt-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
-                          Resultados todavía no disponibles
-                        </p>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          </>
-        )}
+                          {result.position}
+                        </span>
+                        <span
+                          aria-hidden="true"
+                          className="h-9 w-1 shrink-0 rounded-full bg-red-500"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-bold text-white">
+                            {result.driver.firstName} {result.driver.lastName}
+                          </span>
+                          <span className="block truncate text-xs text-slate-500">
+                            {result.team.name}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-xs font-medium tabular-nums text-slate-500">
+                          {pointsFormatter.format(result.points)} pts
+                        </span>
+                      </li>
+                    ))}
+                </ol>
+                <p className="mt-4 text-xs text-slate-500">
+                  {lastRaceDetails.circuit.locality},{" "}
+                  {lastRaceDetails.circuit.country}
+                </p>
+              </div>
+            ) : (
+              <div className="p-6">
+                <h2 className="text-xl font-bold">
+                  {lastRace ? "Resultados no disponibles" : "Todavía no hay carreras"}
+                </h2>
+                <p className="mt-2 text-sm text-slate-400">
+                  {lastRace
+                    ? "No se encontraron resultados para la última carrera."
+                    : "Cuando termine una carrera, sus resultados aparecerán aquí."}
+                </p>
+              </div>
+            )}
+          </section>
 
-        <p className="mt-8 text-center text-xs text-slate-500">
-          Datos del calendario proporcionados por OpenF1.
+          <StandingsPanel
+            title="Campeonato de pilotos"
+            rows={standings.drivers}
+            season={season}
+            driverLinks
+          />
+          <StandingsPanel
+            title="Campeonato de constructores"
+            rows={standings.constructors}
+            season={season}
+          />
+        </div>
+
+        <p className="mt-7 text-center text-xs text-slate-600">
+          Calendario proporcionado por OpenF1 · Temporada {season}
         </p>
       </div>
     </main>
