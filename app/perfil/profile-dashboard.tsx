@@ -92,6 +92,20 @@ const avatarOptions = [
   { value: "🔥", icon: "heart" as const, label: "Fuego" },
 ];
 
+const teamColors: Array<[string, string]> = [
+  ["alpine", "#ff87bc"],
+  ["aston martin", "#00a19c"],
+  ["audi", "#c7c7c7"],
+  ["cadillac", "#d8b15c"],
+  ["ferrari", "#e8002d"],
+  ["haas", "#ffffff"],
+  ["mclaren", "#ff8000"],
+  ["mercedes", "#27f4d2"],
+  ["racing bulls", "#6692ff"],
+  ["red bull", "#3671c6"],
+  ["williams", "#64c4ff"],
+];
+
 const accentOptions = [
   { value: "red", color: "#e10600", label: "Rojo" },
   { value: "cyan", color: "#22d3ee", label: "Cian" },
@@ -226,6 +240,55 @@ function getRank(predictions: number) {
   return { ...level, progress };
 }
 
+function getTeamColor(name: string) {
+  const normalizedName = name.toLowerCase();
+  return (
+    teamColors.find(([team]) => normalizedName.includes(team))?.[1] ?? "#94a3b8"
+  );
+}
+
+function getTeamInitials(name: string) {
+  const words = name
+    .replace(/[^a-zA-Z0-9 ]/g, " ")
+    .trim()
+    .split(/\s+/);
+  return words.length > 1
+    ? words.map((word) => word[0]).join("").slice(0, 3).toUpperCase()
+    : name.slice(0, 3).toUpperCase();
+}
+
+function TeamAvatar({ name }: { name: string }) {
+  const color = getTeamColor(name);
+
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-10 w-10"
+      fill="none"
+      viewBox="0 0 40 40"
+    >
+      <path
+        d="M20 2.5 35 8v11.2c0 8.3-5.8 14.8-15 18.3C10.8 34 5 27.5 5 19.2V8L20 2.5Z"
+        fill={`${color}22`}
+        stroke={color}
+        strokeWidth="2"
+      />
+      <text
+        dominantBaseline="central"
+        fill="white"
+        fontFamily="Arial, sans-serif"
+        fontSize="11"
+        fontWeight="700"
+        textAnchor="middle"
+        x="20"
+        y="20"
+      >
+        {getTeamInitials(name)}
+      </text>
+    </svg>
+  );
+}
+
 export default function ProfileDashboard({
   profile,
   options,
@@ -241,9 +304,12 @@ export default function ProfileDashboard({
   const rank = getRank(stats.predictions);
   const displayName = profile.displayName || profile.username;
   const heroColor = profile.favoriteTeamColor || profile.accentColor;
-  const selectedAvatar =
-    avatarOptions.find((option) => option.value === profile.avatar) ??
-    avatarOptions[0];
+  const selectedAvatar = avatarOptions.find(
+    (option) => option.value === profile.avatar
+  );
+  const selectedAvatarTeam = profile.avatar.startsWith("team:")
+    ? options.teams.find((team) => `team:${team.id}` === profile.avatar)
+    : undefined;
 
   const kpis = [
     { label: "Pronósticos enviados", value: stats.predictions, icon: "flag" as const },
@@ -317,10 +383,14 @@ export default function ProfileDashboard({
                 style={{ boxShadow: `0 0 30px -14px ${heroColor}` }}
                 type="button"
               >
-                <Icon
-                  className="h-10 w-10 text-slate-100"
-                  name={selectedAvatar.icon}
-                />
+                {selectedAvatarTeam ? (
+                  <TeamAvatar name={selectedAvatarTeam.name} />
+                ) : (
+                  <Icon
+                    className="h-10 w-10 text-slate-100"
+                    name={selectedAvatar?.icon ?? "user"}
+                  />
+                )}
                 <span className="absolute inset-0 grid place-items-center rounded-full bg-black/55 opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
                   <Icon className="h-6 w-6" name="camera" />
                 </span>
@@ -820,7 +890,9 @@ export default function ProfileDashboard({
               </label>
 
               <fieldset>
-                <legend className="text-sm font-medium text-slate-200">Avatar</legend>
+                <legend className="text-sm font-medium text-slate-200">
+                  Icono de perfil
+                </legend>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {avatarOptions.map((option) => (
                     <label className="cursor-pointer" key={option.value}>
@@ -837,6 +909,24 @@ export default function ProfileDashboard({
                       <span className="sr-only">{option.label}</span>
                     </label>
                   ))}
+                  {options.teams.map((team) => {
+                    const value = `team:${team.id}`;
+                    return (
+                      <label className="group cursor-pointer" key={team.id}>
+                        <input
+                          className="peer sr-only"
+                          defaultChecked={profile.avatar === value}
+                          name="profileAvatar"
+                          type="radio"
+                          value={value}
+                        />
+                        <span className="grid min-h-12 min-w-12 place-items-center rounded-xl border border-white/10 bg-[#0B0E14] px-1 transition peer-checked:border-cyan-300/60 peer-checked:bg-cyan-300/10 peer-focus-visible:ring-2 peer-focus-visible:ring-cyan-300">
+                          <TeamAvatar name={team.name} />
+                        </span>
+                        <span className="sr-only">{team.name}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </fieldset>
 

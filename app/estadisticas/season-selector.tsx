@@ -1,4 +1,4 @@
-"use client";
+import Link from "next/link";
 
 export default function SeasonSelector({
   seasons,
@@ -8,38 +8,25 @@ export default function SeasonSelector({
   season: number;
 }) {
   return (
-    <form
-      action="/estadisticas"
-      className="flex flex-wrap items-end gap-3"
-      method="get"
-    >
-      <div>
-        <label
-          className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400"
-          htmlFor="season"
-        >
-          Temporada
-        </label>
-        <select
-          className="rounded-full border border-white/15 bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-          defaultValue={season}
-          id="season"
-          name="year"
-          onChange={(event) => event.currentTarget.form?.requestSubmit()}
-        >
-          {seasons.map((availableSeason) => (
-            <option key={availableSeason} value={availableSeason}>
-              {availableSeason}
-            </option>
-          ))}
-        </select>
-      </div>
-      <button
-        className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-400"
-        type="submit"
-      >
-        Ver temporada
-      </button>
-    </form>
+    <nav aria-label="Elegir temporada" className="flex flex-wrap gap-2">
+      {seasons.map((availableSeason) => {
+        const selected = availableSeason === season;
+
+        return (
+          <Link
+            aria-current={selected ? "page" : undefined}
+            className={`rounded-xl border px-4 py-2.5 text-sm font-bold tabular-nums transition ${
+              selected
+                ? "border-red-500 bg-red-500 text-white shadow-lg shadow-red-950/30"
+                : "border-white/10 bg-white/[0.03] text-slate-400 hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
+            }`}
+            href={`/estadisticas?year=${availableSeason}#pilotos`}
+            key={availableSeason}
+          >
+            {availableSeason}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }

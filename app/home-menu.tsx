@@ -106,6 +106,7 @@ export default function HomeMenu({
           <nav aria-label="Navegación principal" className="mt-5 grid gap-2">
             {[
               { href: "/estadisticas", label: "Temporadas" },
+              { href: "/estadisticas#constructores", label: "Constructores" },
               { href: "/ranking", label: "Ranking" },
               { href: "/corredores", label: "Corredores" },
               { href: "/prediccion", label: "Mi predicción" },

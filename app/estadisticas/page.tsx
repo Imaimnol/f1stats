@@ -27,6 +27,7 @@ type Standing = {
   id: string;
   name: string;
   detail: string | null;
+  teamName?: string;
   points: number;
   wins: number;
   podiums: number;
@@ -35,58 +36,84 @@ type Standing = {
   teamColor?: string;
 };
 
-type AvailableSeasonsResponse = {
-  seasons: number[];
-};
+const teamColors: Array<[string, string]> = [
+  ["alpine", "#ff87bc"],
+  ["aston martin", "#00a19c"],
+  ["audi", "#c7c7c7"],
+  ["cadillac", "#d8b15c"],
+  ["ferrari", "#e8002d"],
+  ["haas", "#ffffff"],
+  ["mclaren", "#ff8000"],
+  ["mercedes", "#27f4d2"],
+  ["racing bulls", "#6692ff"],
+  ["red bull", "#3671c6"],
+  ["williams", "#64c4ff"],
+];
 
-type SeasonStandingsResponse = {
-  season: number;
-  races: number;
-  drivers: Standing[];
-  constructors: Standing[];
-  raceDetails: Array<{
-    round: number;
-    name: string;
-    date: string;
-    circuit: {
-      name: string;
-    };
-  }>;
-};
+function getTeamColor(name: string) {
+  const normalizedName = name.toLowerCase();
+  return (
+    teamColors.find(([team]) => normalizedName.includes(team))?.[1] ??
+    "#94a3b8"
+  );
+}
 
 function StandingsTable({
   title,
   rows,
+  season,
   driverLinks = false,
 }: {
   title: string;
   rows: Standing[];
+  season: number;
   driverLinks?: boolean;
 }) {
+  const isConstructorsTable = !driverLinks;
+
   return (
-    <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
-      <div className="border-b border-white/10 px-5 py-4">
-        <h2 className="text-lg font-semibold">{title}</h2>
+    <section
+      className="overflow-hidden rounded-3xl border border-white/[0.08] bg-[#11131b]"
+      id={driverLinks ? "pilotos" : "constructores"}
+    >
+      <div className="border-b border-white/[0.08] px-5 py-4 sm:px-6">
+        <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400 sm:text-sm">
+          {season} {title}
+        </h2>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[620px] text-left text-sm">
-          <thead className="text-xs uppercase tracking-wider text-slate-400">
+        <table
+          className={`w-full text-left text-sm ${
+            isConstructorsTable ? "min-w-[420px]" : "min-w-[650px]"
+          }`}
+        >
+          <thead className="border-b border-white/[0.08] text-[10px] font-semibold uppercase tracking-wider text-slate-500 sm:text-xs">
             <tr>
-              <th className="px-5 py-3 font-medium">Pos.</th>
-              <th className="px-5 py-3 font-medium">{title}</th>
-              <th className="px-5 py-3 text-right font-medium">Puntos</th>
-              <th className="px-5 py-3 text-right font-medium">Victorias</th>
-              <th className="px-5 py-3 text-right font-medium">Podios</th>
-              <th className="px-5 py-3 text-right font-medium">Carreras</th>
+              <th className="w-14 px-5 py-3 font-medium sm:px-6">Pos</th>
+              <th className="px-3 py-3 font-medium">
+                {isConstructorsTable ? "Constructor" : "Piloto"}
+              </th>
+              {!isConstructorsTable && (
+                <th className="px-3 py-3 font-medium">Equipo</th>
+              )}
+              <th className="px-3 py-3 text-right font-medium">Victorias</th>
+              <th className="px-5 py-3 text-right font-medium sm:px-6">Puntos</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/10">
+          <tbody className="divide-y divide-white/[0.06]">
             {rows.map((row, index) => (
-              <tr key={row.id} className="text-slate-200">
-                <td className="px-5 py-4 font-semibold text-red-300">
-                  {index + 1}
+              <tr
+                className="text-slate-300 transition-colors hover:bg-white/[0.025]"
+                key={row.id}
+              >
+                <td className="px-5 py-4 font-mono font-bold tabular-nums sm:px-6">
+                  <span
+                    className={index === 0 ? "text-amber-300" : "text-slate-400"}
+                  >
+                    {index + 1}
+                  </span>
                 </td>
-                <td className="px-5 py-4">
+                <td className="px-3 py-4">
                   {driverLinks ? (
                     <Link
                       className="flex items-center gap-3 font-semibold text-white transition-colors hover:text-red-300"
@@ -96,7 +123,7 @@ function StandingsTable({
                         row.driverNumber !== undefined && (
                           <span
                             aria-label={`Número del piloto ${row.driverNumber}`}
-                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-white/20 text-lg font-black tabular-nums text-white"
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/15 text-sm font-black tabular-nums text-white"
                             style={{
                               backgroundColor: row.teamColor ?? "#475569",
                               textShadow: "0 1px 3px rgb(0 0 0 / 80%)",
@@ -108,18 +135,33 @@ function StandingsTable({
                       {row.name}
                     </Link>
                   ) : (
-                    <p className="font-semibold text-white">{row.name}</p>
+                    <p
+                      className="border-l-2 py-1 pl-3 font-semibold text-white"
+                      style={{
+                        borderColor: getTeamColor(row.name),
+                        color: getTeamColor(row.name),
+                      }}
+                    >
+                      {row.name}
+                    </p>
                   )}
-                  {row.detail && (
-                    <p className="mt-1 text-xs text-slate-400">{row.detail}</p>
+                  {driverLinks && row.detail && (
+                    <p className="mt-1 pl-3 text-xs text-slate-500">
+                      {row.detail}
+                    </p>
                   )}
                 </td>
-                <td className="px-5 py-4 text-right font-semibold text-white">
+                {!isConstructorsTable && (
+                  <td className="px-3 py-4 text-sm text-slate-400">
+                    {row.teamName || "—"}
+                  </td>
+                )}
+                <td className="px-3 py-4 text-right font-mono tabular-nums text-slate-400">
+                  {row.wins}
+                </td>
+                <td className="px-5 py-4 text-right font-mono font-bold tabular-nums text-white sm:px-6">
                   {pointsFormatter.format(row.points)}
                 </td>
-                <td className="px-5 py-4 text-right">{row.wins}</td>
-                <td className="px-5 py-4 text-right">{row.podiums}</td>
-                <td className="px-5 py-4 text-right">{row.starts}</td>
               </tr>
             ))}
           </tbody>
@@ -206,28 +248,28 @@ export default async function StatisticsPage({
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14">
-      <div className="mx-auto max-w-5xl">
-        <header className="mb-10 border-b border-white/10 pb-8 sm:mb-12 sm:pb-10">
+    <main className="min-h-screen bg-[#0B0E14] px-4 py-8 text-white sm:px-8 sm:py-12">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-7 border-b border-white/10 pb-7 sm:mb-9 sm:pb-8">
           <Link
             href="/"
             className="text-sm font-semibold text-red-300 transition-colors hover:text-red-200"
           >
-            ← Volver al calendario
+            ← F1 Stats
           </Link>
-          <div className="mt-6 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-            <div>
-              <p className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-red-400">
-                F1 Stats
-              </p>
-              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-                Temporadas
-              </h1>
-              <p className="mt-3 max-w-xl text-base leading-7 text-slate-300">
-                Posiciones de pilotos y constructores según los resultados
-                importados.
-              </p>
-            </div>
+          <div className="mt-6">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-red-400">
+              Campeonato de Fórmula 1
+            </p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+              Clasificación {season}
+            </h1>
+            <p className="mt-2 text-sm text-slate-400">
+              Pilotos y constructores · {standings.races}{" "}
+              {standings.races === 1 ? "carrera" : "carreras"} con resultados
+            </p>
+          </div>
+          <div className="mt-6">
             <SeasonSelector seasons={availableSeasons} season={season} />
           </div>
         </header>
@@ -269,19 +311,30 @@ export default async function StatisticsPage({
           </section>
         ) : (
           <>
-            <p className="mb-5 text-sm text-slate-400">
-              Resultados de {standings.races}{" "}
-              {standings.races === 1 ? "carrera importada" : "carreras importadas"}
-            </p>
-            <div className="space-y-6">
+            {standings.drivers[0] && (
+              <p className="mb-5 text-sm leading-6 text-slate-300">
+                <span className="font-semibold text-white">
+                  {standings.drivers[0].name}
+                </span>{" "}
+                lidera el campeonato de pilotos con{" "}
+                <span className="font-bold text-white">
+                  {pointsFormatter.format(standings.drivers[0].points)}
+                </span>{" "}
+                puntos y {standings.drivers[0].wins}{" "}
+                {standings.drivers[0].wins === 1 ? "victoria" : "victorias"}.
+              </p>
+            )}
+            <div className="space-y-5">
               <StandingsTable
-                title="Pilotos"
+                title="Campeonato de Pilotos"
                 rows={standings.drivers}
+                season={season}
                 driverLinks
               />
               <StandingsTable
-                title="Constructores"
+                title="Campeonato de Constructores"
                 rows={standings.constructors}
+                season={season}
               />
             </div>
             <section className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04]">

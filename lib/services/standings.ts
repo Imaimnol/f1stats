@@ -4,6 +4,7 @@ type Standing = {
   id: string;
   name: string;
   detail: string | null;
+  teamName?: string;
   permanentNumber?: number | null;
   points: number;
   wins: number;
@@ -43,6 +44,7 @@ function rankStandings(rows: Standing[]): Omit<Standing, "finishes">[] {
     id: row.id,
     name: row.name,
     detail: row.detail,
+    teamName: row.teamName,
     permanentNumber: row.permanentNumber,
     points: row.points,
     wins: row.wins,
@@ -85,6 +87,7 @@ export async function getSeasonStandings(season: number) {
     where: {
       race: { season },
     },
+    orderBy: [{ race: { round: "asc" } }, { position: "asc" }],
     select: {
       raceId: true,
       position: true,
@@ -159,6 +162,7 @@ export async function getSeasonStandings(season: number) {
         ? 1
         : 0;
     driver.starts++;
+    driver.teamName = result.team.name;
     if (result.position !== null && result.position >= 1) {
       driver.finishes.push(result.position);
     }

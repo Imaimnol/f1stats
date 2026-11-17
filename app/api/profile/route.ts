@@ -21,12 +21,27 @@ export async function POST(request: Request) {
   const bio = String(formData.get("bio") ?? "").trim();
   const profileAccent = String(formData.get("profileAccent") ?? "");
   const profileAvatar = String(formData.get("profileAvatar") ?? "");
+  const teamAvatarId = profileAvatar.startsWith("team:")
+    ? profileAvatar.slice("team:".length)
+    : null;
 
   if (displayName.length > 32 || bio.length > 160) {
     return NextResponse.redirect(new URL("/perfil?error=length", request.url));
   }
 
-  if (!allowedAccents.has(profileAccent) || !allowedAvatars.has(profileAvatar)) {
+  const isExistingTeamAvatar = teamAvatarId
+    ? Boolean(
+        await prisma.team.findUnique({
+          where: { id: teamAvatarId },
+          select: { id: true },
+        })
+      )
+    : false;
+
+  if (
+    !allowedAccents.has(profileAccent) ||
+    (!allowedAvatars.has(profileAvatar) && !isExistingTeamAvatar)
+  ) {
     return NextResponse.redirect(new URL("/perfil?error=invalid", request.url));
   }
 

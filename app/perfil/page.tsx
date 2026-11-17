@@ -128,9 +128,15 @@ export default async function PerfilPage({
 
   const profileAccent =
     accents[profileUser.profileAccent as keyof typeof accents] ?? accents.red;
-  const selectedAvatar = avatars.includes(profileUser.profileAvatar)
-    ? profileUser.profileAvatar
-    : avatars[0];
+  const isTeamAvatar =
+    profileUser.profileAvatar.startsWith("team:") &&
+    teams.some(
+      (team) => `team:${team.id}` === profileUser.profileAvatar
+    );
+  const selectedAvatar =
+    avatars.includes(profileUser.profileAvatar) || isTeamAvatar
+      ? profileUser.profileAvatar
+      : avatars[0];
   const favoriteCount = [
     profileUser.favoriteDriver,
     profileUser.favoriteTeam,
