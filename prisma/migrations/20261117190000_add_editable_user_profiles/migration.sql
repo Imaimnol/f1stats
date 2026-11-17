@@ -1,0 +1,5 @@
+ALTER TABLE "User"
+ADD COLUMN "displayName" TEXT,
+ADD COLUMN "bio" TEXT,
+ADD COLUMN "profileAccent" TEXT NOT NULL DEFAULT 'red',
+ADD COLUMN "profileAvatar" TEXT NOT NULL DEFAULT '🏎️';

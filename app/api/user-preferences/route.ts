@@ -116,6 +116,19 @@ export async function POST(request: Request) {
   const nextTeamId = await validateExistingId("team", teamId || null);
   const nextCircuitId = await validateExistingId("circuit", circuitId || null);
 
+  if (
+    (driverId && !nextDriverId) ||
+    (teamId && !nextTeamId) ||
+    (circuitId && !nextCircuitId)
+  ) {
+    return formData !== null
+      ? NextResponse.redirect(new URL("/perfil?error=favorite", request.url))
+      : NextResponse.json(
+          { error: "Una de las preferencias seleccionadas no existe." },
+          { status: 400 }
+        );
+  }
+
   const currentUser = await prisma.user.findUnique({
     where: { id: user.id },
     select: {
@@ -130,12 +143,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Usuario no encontrado." }, { status: 404 });
   }
 
+  const hasDriverField =
+    formData !== null
+      ? formData.has("favoriteDriverId") || formData.has("driverId")
+      : typeof payload?.favoriteDriverId === "string" ||
+        typeof payload?.driverId === "string";
+  const hasTeamField =
+    formData !== null
+      ? formData.has("favoriteTeamId")
+      : typeof payload?.favoriteTeamId === "string";
+  const hasCircuitField =
+    formData !== null
+      ? formData.has("favoriteCircuitId")
+      : typeof payload?.favoriteCircuitId === "string";
+
   const updatedUser = await prisma.user.update({
     where: { id: user.id },
     data: {
-      favoriteDriverId: nextDriverId ?? currentUser.favoriteDriverId ?? null,
-      favoriteTeamId: nextTeamId ?? currentUser.favoriteTeamId ?? null,
-      favoriteCircuitId: nextCircuitId ?? currentUser.favoriteCircuitId ?? null,
+      favoriteDriverId: hasDriverField
+        ? nextDriverId
+        : currentUser.favoriteDriverId,
+      favoriteTeamId: hasTeamField ? nextTeamId : currentUser.favoriteTeamId,
+      favoriteCircuitId: hasCircuitField
+        ? nextCircuitId
+        : currentUser.favoriteCircuitId,
     },
     select: {
       id: true,
@@ -162,7 +193,7 @@ export async function POST(request: Request) {
   }
 
   if (isFormRequest) {
-    return NextResponse.redirect(new URL("/perfil", request.url));
+    return NextResponse.redirect(new URL("/perfil?favorites=1", request.url));
   }
 
   return NextResponse.json({

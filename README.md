@@ -50,6 +50,14 @@ detallada de cada carrera. Los nombres de los pilotos enlazan a
 `/pilotos/[driverId]`, donde se muestran sus estadísticas de trayectoria y los
 resultados importados.
 
+## Perfil de usuario
+
+En `/perfil`, cada usuario puede personalizar su nombre visible, presentación,
+avatar y color, además de elegir sus pilotos, escuderías y circuitos favoritos.
+Las insignias y estadísticas se calculan a partir de sus pronósticos guardados y
+de los resultados de carrera disponibles; el perfil también muestra el progreso
+y los pronósticos recientes.
+
 ## Predicciones y ranking
 
 Los usuarios con sesión iniciada pueden pronosticar el podio de la próxima
