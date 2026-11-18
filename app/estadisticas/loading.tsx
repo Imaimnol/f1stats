@@ -11,7 +11,7 @@ export default function StatisticsLoading() {
           <div className="mt-4 h-5 w-full max-w-xl rounded bg-white/10" />
         </div>
         <div className="space-y-6">
-          {Array.from({ length: 2 }, (_, sectionIndex) => (
+          {Array.from({ length: 1 }, (_, sectionIndex) => (
             <section
               key={sectionIndex}
               className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"

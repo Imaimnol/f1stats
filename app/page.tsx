@@ -49,7 +49,9 @@ function StandingsPanel({
         </h2>
         <Link
           className="shrink-0 text-xs font-semibold text-slate-400 transition-colors hover:text-red-300"
-          href={`/estadisticas?year=${season}`}
+          href={`${
+            driverLinks ? "/estadisticas" : "/constructores"
+          }?year=${season}`}
         >
           Tabla completa <span aria-hidden="true">→</span>
         </Link>

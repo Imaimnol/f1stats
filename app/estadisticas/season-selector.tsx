@@ -3,10 +3,14 @@ import Link from "next/link";
 export default function SeasonSelector({
   seasons,
   season,
+  championship,
 }: {
   seasons: number[];
   season: number;
+  championship: "drivers" | "constructors";
 }) {
+  const route = championship === "drivers" ? "/estadisticas" : "/constructores";
+
   return (
     <nav aria-label="Elegir temporada" className="flex flex-wrap gap-2">
       {seasons.map((availableSeason) => {
@@ -20,7 +24,7 @@ export default function SeasonSelector({
                 ? "border-red-500 bg-red-500 text-white shadow-lg shadow-red-950/30"
                 : "border-white/10 bg-white/[0.03] text-slate-400 hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
             }`}
-            href={`/estadisticas?year=${availableSeason}#pilotos`}
+            href={`${route}?year=${availableSeason}`}
             key={availableSeason}
           >
             {availableSeason}
