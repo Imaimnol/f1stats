@@ -42,11 +42,12 @@ export default function TeamMark({
 
   const [, logoName] = teamLogo;
   const dimensions = size === "md" ? 40 : 32;
+  const logoColor = logoName === "mercedes" ? "brightness-0 invert" : "";
 
   return (
     <Image
       alt={`${team} logo`}
-      className="shrink-0 object-contain"
+      className={`shrink-0 object-contain ${logoColor}`}
       height={dimensions}
       src={`/team-logos/${logoName}.webp`}
       width={dimensions}
