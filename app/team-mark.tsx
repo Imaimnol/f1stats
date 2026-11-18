@@ -1,15 +1,17 @@
-const teamColors: Array<[string, string, string]> = [
-  ["alpine", "#ff87bc", "ALP"],
-  ["aston martin", "#00a19c", "AM"],
-  ["audi", "#c7c7c7", "AUD"],
-  ["cadillac", "#d8b15c", "CAD"],
-  ["ferrari", "#e8002d", "SF"],
-  ["haas", "#e10600", "H"],
-  ["mclaren", "#ff8000", "MCL"],
-  ["mercedes", "#27f4d2", "AMG"],
-  ["racing bulls", "#6692ff", "RB"],
-  ["red bull", "#3671c6", "RB"],
-  ["williams", "#64c4ff", "W"],
+import Image from "next/image";
+
+const teams: Array<[string, string]> = [
+  ["alpine", "alpine"],
+  ["aston martin", "aston-martin"],
+  ["audi", "audi"],
+  ["cadillac", "cadillac"],
+  ["ferrari", "ferrari"],
+  ["haas", "haas"],
+  ["mclaren", "mclaren"],
+  ["mercedes", "mercedes"],
+  ["racing bulls", "racing-bulls"],
+  ["red bull", "red-bull"],
+  ["williams", "williams"],
 ];
 
 export default function TeamMark({
@@ -20,34 +22,34 @@ export default function TeamMark({
   size?: "sm" | "md";
 }) {
   if (!team) {
-    return (
-      <span
-        aria-hidden="true"
-        className={`inline-flex shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 ${
-          size === "md" ? "size-9" : "size-7"
-        }`}
-      />
-    );
+    return null;
   }
 
   const normalizedName = team.toLowerCase();
-  const [, color, monogram] =
-    teamColors.find(([name]) => normalizedName.includes(name)) ??
-    ([team, "#94a3b8", team.slice(0, 3).toUpperCase()] as const);
-  const dimensions = size === "md" ? "size-9 text-[9px]" : "size-7 text-[8px]";
+  const teamLogo = teams.find(([name]) => normalizedName.includes(name));
+
+  if (!teamLogo) {
+    return (
+      <span
+        aria-label={`${team} logo`}
+        className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-[8px] font-bold text-slate-400"
+        role="img"
+      >
+        {team.slice(0, 3).toUpperCase()}
+      </span>
+    );
+  }
+
+  const [, logoName] = teamLogo;
+  const dimensions = size === "md" ? 40 : 32;
 
   return (
-    <span
-      aria-label={`${team} logo`}
-      className={`inline-flex shrink-0 items-center justify-center rounded-lg border font-black italic tracking-tight ${dimensions}`}
-      role="img"
-      style={{
-        borderColor: `${color}66`,
-        backgroundColor: `${color}16`,
-        color,
-      }}
-    >
-      {monogram}
-    </span>
+    <Image
+      alt={`${team} logo`}
+      className="shrink-0 object-contain"
+      height={dimensions}
+      src={`/team-logos/${logoName}.webp`}
+      width={dimensions}
+    />
   );
 }
