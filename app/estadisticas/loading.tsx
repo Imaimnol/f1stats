@@ -2,7 +2,7 @@ export default function StatisticsLoading() {
   return (
     <main
       aria-label="Cargando campeonatos"
-      className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14"
+      className="min-h-screen bg-[#090a0e] px-4 py-6 text-white sm:px-8 sm:py-9"
     >
       <div className="mx-auto max-w-5xl animate-pulse">
         <div className="mb-10 border-b border-white/10 pb-8 sm:mb-12 sm:pb-10">
@@ -14,7 +14,7 @@ export default function StatisticsLoading() {
           {Array.from({ length: 1 }, (_, sectionIndex) => (
             <section
               key={sectionIndex}
-              className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"
+              className="overflow-hidden rounded-2xl border border-white/10 bg-[#111217]"
             >
               <div className="border-b border-white/10 px-5 py-4">
                 <div className="h-5 w-32 rounded bg-white/10" />

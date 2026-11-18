@@ -2,7 +2,7 @@ export default function Loading() {
   return (
     <main
       aria-label="Cargando calendario"
-      className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14"
+      className="min-h-screen bg-[#090a0e] px-4 py-6 text-white sm:px-8 sm:py-9"
     >
       <div className="mx-auto max-w-5xl animate-pulse">
         <div className="mb-10 border-b border-white/10 pb-8 sm:mb-12 sm:pb-10">
@@ -14,7 +14,7 @@ export default function Loading() {
           {Array.from({ length: 6 }, (_, index) => (
             <div
               key={index}
-              className="h-36 rounded-2xl border border-white/10 bg-white/[0.04]"
+              className="h-36 rounded-2xl border border-white/10 bg-[#111217]"
             />
           ))}
         </div>

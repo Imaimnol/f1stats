@@ -15,7 +15,7 @@ function DriversLoading() {
   return (
     <main
       aria-label="Cargando corredores"
-      className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14"
+      className="min-h-screen bg-[#090a0e] px-4 py-6 text-white sm:px-8 sm:py-9"
     >
       <div className="mx-auto max-w-6xl animate-pulse">
         <div className="mb-8 border-b border-white/10 pb-8">
@@ -26,7 +26,7 @@ function DriversLoading() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }, (_, index) => (
             <div
-              className="h-56 rounded-2xl border border-white/10 bg-white/[0.04]"
+              className="h-56 rounded-2xl border border-white/10 bg-[#111217]"
               key={index}
             />
           ))}
@@ -77,7 +77,7 @@ async function DriversContent({
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14">
+    <main className="min-h-screen bg-[#090a0e] px-4 py-6 text-white sm:px-8 sm:py-9">
       <div className="mx-auto max-w-6xl">
         <header className="mb-8 border-b border-white/10 pb-8">
           <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
@@ -91,7 +91,7 @@ async function DriversContent({
               <p className="mb-3 mt-6 text-sm font-semibold uppercase tracking-[0.24em] text-red-400">
                 F1 Stats
               </p>
-              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
                 Corredores
               </h1>
               <p className="mt-3 max-w-xl text-base leading-7 text-slate-300">
@@ -109,7 +109,7 @@ async function DriversContent({
                   Temporada
                 </span>
                 <select
-                  className="rounded-full border border-white/15 bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                  className="rounded-xl border border-white/15 bg-[#111217] px-4 py-2 text-sm font-semibold text-white"
                   defaultValue={season}
                   name="year"
                 >
@@ -153,7 +153,7 @@ async function DriversContent({
             {error}
           </section>
         ) : drivers.length === 0 ? (
-          <section className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
+          <section className="rounded-2xl border border-white/10 bg-[#111217] px-6 py-12 text-center">
             <h2 className="text-xl font-semibold">
               No hay corredores disponibles
             </h2>

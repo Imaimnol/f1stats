@@ -248,12 +248,12 @@ export default async function DriverPage({
               Perfil de piloto · {isCareerView ? "Trayectoria" : selectedSeason}
             </p>
             <p
-              className="mt-3 text-5xl font-black tracking-tight sm:text-7xl"
+              className="mt-3 text-4xl font-black tracking-tight sm:text-5xl"
               style={{ color: teamColor }}
             >
               {driver.lastName}
             </p>
-            <h1 className="mt-1 text-2xl font-bold text-white sm:text-4xl">
+            <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">
               {driver.firstName}
             </h1>
             <p className="mt-3 text-sm font-semibold text-slate-300">

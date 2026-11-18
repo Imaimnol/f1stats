@@ -10,8 +10,8 @@ export default async function RankingPage() {
   const { leaderboard, isDemo, error } = await getPredictionLeaderboard();
 
   return (
-    <main className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14">
-      <div className="mx-auto max-w-4xl">
+    <main className="min-h-screen bg-[#090a0e] px-4 py-6 text-white sm:px-8 sm:py-9">
+      <div className="mx-auto max-w-6xl">
         <header className="mb-10 border-b border-white/10 pb-8">
           <Link
             href="/"
@@ -22,7 +22,7 @@ export default async function RankingPage() {
           <p className="mb-4 mt-6 text-sm font-semibold uppercase tracking-[0.24em] text-red-400">
             F1 Stats
           </p>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Ranking de predicciones
           </h1>
           <p className="mt-3 text-slate-300">
@@ -41,7 +41,7 @@ export default async function RankingPage() {
             className={`mb-6 rounded-xl border px-4 py-3 text-sm ${
               error
                 ? "border-amber-400/30 bg-amber-400/10 text-amber-200"
-                : "border-white/10 bg-white/[0.04] text-slate-300"
+                : "border-white/10 bg-[#111217] text-slate-300"
             }`}
             role={error ? "alert" : "status"}
           >
@@ -51,7 +51,7 @@ export default async function RankingPage() {
         )}
 
         {leaderboard.length > 0 ? (
-          <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
+          <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#111217]">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[480px] text-left text-sm">
                 <thead className="text-xs uppercase tracking-wider text-slate-400">
@@ -88,7 +88,7 @@ export default async function RankingPage() {
             </div>
           </section>
         ) : (
-          <section className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
+          <section className="rounded-2xl border border-white/10 bg-[#111217] px-6 py-12 text-center">
             <h2 className="text-xl font-semibold">Todavía no hay usuarios</h2>
             <p className="mt-2 text-slate-300">
               Registrate para participar cuando empiecen las predicciones.

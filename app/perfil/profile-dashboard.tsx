@@ -319,7 +319,7 @@ export default function ProfileDashboard({
   ];
 
   return (
-    <main className="min-h-screen bg-[#0B0E14] px-4 py-8 text-slate-100 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#090a0e] px-4 py-6 text-slate-100 sm:px-8 sm:py-9">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6">
           <Link
@@ -362,7 +362,7 @@ export default function ProfileDashboard({
 
         <section
           aria-label="Resumen del perfil"
-          className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#131722] p-5 shadow-2xl shadow-black/20 sm:p-8"
+          className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#111217] p-5 shadow-2xl shadow-black/20 sm:p-6"
           style={{
             borderTopColor: heroColor,
             borderTopWidth: 3,
@@ -483,7 +483,7 @@ export default function ProfileDashboard({
         >
           {kpis.map((kpi) => (
             <article
-              className="rounded-2xl border border-white/[0.08] bg-[#131722] p-4 sm:p-5"
+              className="rounded-2xl border border-white/10 bg-[#111217] p-4 sm:p-5"
               key={kpi.label}
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-200">
@@ -564,7 +564,7 @@ export default function ProfileDashboard({
 
                   return (
                     <article
-                      className={`rounded-2xl border bg-[#131722] p-4 transition ${
+                      className={`rounded-2xl border bg-[#111217] p-4 transition ${
                         unlocked
                           ? `${color.border} shadow-[0_0_30px_-24px_rgba(255,255,255,0.6)]`
                           : "border-white/10 opacity-60 grayscale"
@@ -623,7 +623,7 @@ export default function ProfileDashboard({
                   );
                 })}
               </div>
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/[0.08] bg-[#131722] px-5 py-4 text-sm">
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-[#111217] px-5 py-4 text-sm">
                 <span className="text-slate-300">Miembro desde {profile.createdAt}</span>
                 <span className="font-mono tabular-nums text-slate-300">
                   {stats.preferences}/3 preferencias configuradas
@@ -646,7 +646,7 @@ export default function ProfileDashboard({
                 </p>
               </div>
               {predictions.length === 0 ? (
-                <div className="rounded-2xl border border-white/[0.08] bg-[#131722] px-5 py-12 text-center">
+                <div className="rounded-2xl border border-white/10 bg-[#111217] px-5 py-12 text-center">
                   <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-white/5 text-slate-300">
                     <Icon className="h-6 w-6" name="flag" />
                   </div>
@@ -656,7 +656,7 @@ export default function ProfileDashboard({
                   </p>
                 </div>
               ) : (
-                <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#131722]">
+                <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#111217]">
                   <div className="hidden grid-cols-[1.1fr_1fr_1fr_auto] gap-4 border-b border-white/10 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400 lg:grid">
                     <span>Gran Premio</span>
                     <span>Tu podio</span>
@@ -751,14 +751,14 @@ export default function ProfileDashboard({
               </div>
               <form
                 action="/api/user-preferences"
-                className="rounded-2xl border border-white/[0.08] bg-[#131722] p-5 sm:p-6"
+                className="rounded-2xl border border-white/10 bg-[#111217] p-5 sm:p-6"
                 method="post"
               >
                 <div className="grid gap-4 md:grid-cols-3">
                   <label className="text-sm font-medium text-slate-200">
                     Piloto favorito
                     <select
-                      className="mt-2 min-h-11 w-full rounded-xl border border-white/10 bg-[#0B0E14] px-3 text-sm text-white outline-none focus:border-cyan-300/60"
+                      className="mt-2 min-h-11 w-full rounded-xl border border-white/10 bg-[#090a0e] px-3 text-sm text-white outline-none focus:border-cyan-300/60"
                       defaultValue={profile.favoriteDriver?.id ?? ""}
                       id="favorite-driver"
                       name="favoriteDriverId"
@@ -775,7 +775,7 @@ export default function ProfileDashboard({
                   <label className="text-sm font-medium text-slate-200">
                     Escudería favorita
                     <select
-                      className="mt-2 min-h-11 w-full rounded-xl border border-white/10 bg-[#0B0E14] px-3 text-sm text-white outline-none focus:border-cyan-300/60"
+                      className="mt-2 min-h-11 w-full rounded-xl border border-white/10 bg-[#090a0e] px-3 text-sm text-white outline-none focus:border-cyan-300/60"
                       defaultValue={profile.favoriteTeam?.id ?? ""}
                       id="favorite-team"
                       name="favoriteTeamId"
@@ -791,7 +791,7 @@ export default function ProfileDashboard({
                   <label className="text-sm font-medium text-slate-200">
                     Circuito favorito
                     <select
-                      className="mt-2 min-h-11 w-full rounded-xl border border-white/10 bg-[#0B0E14] px-3 text-sm text-white outline-none focus:border-cyan-300/60"
+                      className="mt-2 min-h-11 w-full rounded-xl border border-white/10 bg-[#090a0e] px-3 text-sm text-white outline-none focus:border-cyan-300/60"
                       defaultValue={profile.favoriteCircuit?.id ?? ""}
                       id="favorite-circuit"
                       name="favoriteCircuitId"
@@ -841,7 +841,7 @@ export default function ProfileDashboard({
           <section
             aria-labelledby="edit-profile-title"
             aria-modal="true"
-            className="my-auto w-full max-w-xl rounded-3xl border border-white/10 bg-[#131722] p-5 shadow-2xl sm:p-7"
+            className="my-auto w-full max-w-xl rounded-2xl border border-white/10 bg-[#111217] p-5 shadow-2xl sm:p-7"
             role="dialog"
           >
             <div className="flex items-start justify-between gap-4">
@@ -867,7 +867,7 @@ export default function ProfileDashboard({
               <label className="block text-sm font-medium text-slate-200">
                 Nombre visible
                 <input
-                  className="mt-2 min-h-11 w-full rounded-xl border border-white/10 bg-[#0B0E14] px-3 text-white outline-none focus:border-cyan-300/60"
+                  className="mt-2 min-h-11 w-full rounded-xl border border-white/10 bg-[#090a0e] px-3 text-white outline-none focus:border-cyan-300/60"
                   defaultValue={profile.displayName ?? ""}
                   maxLength={32}
                   name="displayName"
@@ -877,7 +877,7 @@ export default function ProfileDashboard({
               <label className="block text-sm font-medium text-slate-200">
                 Presentación
                 <textarea
-                  className="mt-2 min-h-24 w-full resize-y rounded-xl border border-white/10 bg-[#0B0E14] px-3 py-2 text-white outline-none focus:border-cyan-300/60"
+                  className="mt-2 min-h-24 w-full resize-y rounded-xl border border-white/10 bg-[#090a0e] px-3 py-2 text-white outline-none focus:border-cyan-300/60"
                   defaultValue={profile.bio ?? ""}
                   maxLength={160}
                   name="bio"
@@ -903,7 +903,7 @@ export default function ProfileDashboard({
                         type="radio"
                         value={option.value}
                       />
-                      <span className="grid h-12 w-12 place-items-center rounded-xl border border-white/10 bg-[#0B0E14] text-slate-300 transition peer-checked:border-cyan-300/60 peer-checked:bg-cyan-300/10 peer-checked:text-cyan-100 peer-focus-visible:ring-2 peer-focus-visible:ring-cyan-300">
+                      <span className="grid h-12 w-12 place-items-center rounded-xl border border-white/10 bg-[#090a0e] text-slate-300 transition peer-checked:border-cyan-300/60 peer-checked:bg-cyan-300/10 peer-checked:text-cyan-100 peer-focus-visible:ring-2 peer-focus-visible:ring-cyan-300">
                         <Icon className="h-6 w-6" name={option.icon} />
                       </span>
                       <span className="sr-only">{option.label}</span>
@@ -920,7 +920,7 @@ export default function ProfileDashboard({
                           type="radio"
                           value={value}
                         />
-                        <span className="grid min-h-12 min-w-12 place-items-center rounded-xl border border-white/10 bg-[#0B0E14] px-1 transition peer-checked:border-cyan-300/60 peer-checked:bg-cyan-300/10 peer-focus-visible:ring-2 peer-focus-visible:ring-cyan-300">
+                        <span className="grid min-h-12 min-w-12 place-items-center rounded-xl border border-white/10 bg-[#090a0e] px-1 transition peer-checked:border-cyan-300/60 peer-checked:bg-cyan-300/10 peer-focus-visible:ring-2 peer-focus-visible:ring-cyan-300">
                           <TeamAvatar name={team.name} />
                         </span>
                         <span className="sr-only">{team.name}</span>
@@ -946,7 +946,7 @@ export default function ProfileDashboard({
                       />
                       <span
                         aria-label={option.label}
-                        className="block h-8 w-8 rounded-full ring-offset-2 ring-offset-[#131722] transition peer-checked:ring-2 peer-checked:ring-white peer-focus-visible:ring-2"
+                        className="block h-8 w-8 rounded-full ring-offset-2 ring-offset-[#111217] transition peer-checked:ring-2 peer-checked:ring-white peer-focus-visible:ring-2"
                         style={{ backgroundColor: option.color }}
                       />
                     </label>
@@ -1010,7 +1010,7 @@ function FavoriteCard({
 }) {
   return (
     <button
-      className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#131722] p-4 text-left transition hover:border-white/20 hover:bg-white/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"
+      className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-[#111217] p-4 text-left transition hover:border-white/20 hover:bg-white/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"
       onClick={onClick}
       type="button"
     >

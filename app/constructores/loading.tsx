@@ -2,7 +2,7 @@ export default function ConstructorsLoading() {
   return (
     <main
       aria-label="Cargando campeonato de constructores"
-      className="min-h-screen bg-[#0B0E14] px-4 py-8 text-white sm:px-8 sm:py-12"
+      className="min-h-screen bg-[#090a0e] px-4 py-6 text-white sm:px-8 sm:py-9"
     >
       <div className="mx-auto max-w-6xl animate-pulse">
         <div className="mb-8 border-b border-white/10 pb-8">
@@ -10,7 +10,7 @@ export default function ConstructorsLoading() {
           <div className="mt-6 h-10 w-72 rounded bg-white/10" />
           <div className="mt-4 h-5 w-48 rounded bg-white/10" />
         </div>
-        <section className="overflow-hidden rounded-3xl border border-white/10 bg-[#11131b]">
+        <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#111217]">
           <div className="border-b border-white/10 px-5 py-4">
             <div className="h-4 w-64 rounded bg-white/10" />
           </div>

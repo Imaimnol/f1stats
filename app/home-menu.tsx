@@ -31,7 +31,7 @@ export default function HomeMenu({
         aria-controls="home-navigation-drawer"
         aria-expanded={isOpen}
         aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
-        className="flex shrink-0 items-center gap-3 rounded-xl border border-white/15 bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:border-red-400/50"
+        className="flex shrink-0 items-center gap-3 rounded-xl border border-white/15 bg-[#111217] px-4 py-3 text-sm font-semibold text-white transition-colors hover:border-red-400/50"
         onClick={() => setIsOpen((open) => !open)}
         type="button"
       >
@@ -44,7 +44,7 @@ export default function HomeMenu({
       </button>
       <Link
         aria-label={currentUser ? "Mi perfil" : "Iniciar sesión"}
-        className="flex size-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-slate-900 text-slate-200 transition-colors hover:border-red-400/50 hover:text-white"
+        className="flex size-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-[#111217] text-slate-200 transition-colors hover:border-red-400/50 hover:text-white"
         href={currentUser ? "/perfil" : "/login"}
         title={currentUser ? "Mi perfil" : "Iniciar sesión"}
       >
@@ -80,7 +80,7 @@ export default function HomeMenu({
         />
         <aside
           aria-label="Menú de navegación"
-          className={`absolute inset-y-0 right-0 flex w-[min(24rem,88vw)] flex-col border-l border-white/10 bg-slate-950 p-6 shadow-2xl shadow-black/50 transition-transform duration-300 ease-out ${
+          className={`absolute inset-y-0 right-0 flex w-[min(24rem,88vw)] flex-col border-l border-white/10 bg-[#111217] p-6 shadow-2xl shadow-black/50 transition-transform duration-300 ease-out ${
             isOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >

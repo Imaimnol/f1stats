@@ -74,7 +74,7 @@ function StandingsTable({
 
   return (
     <section
-      className="overflow-hidden rounded-3xl border border-white/[0.08] bg-[#11131b]"
+      className="overflow-hidden rounded-2xl border border-white/10 bg-[#111217]"
       id={driverLinks ? "pilotos" : "constructores"}
     >
       <div className="border-b border-white/[0.08] px-5 py-4 sm:px-6">
@@ -252,7 +252,7 @@ export default async function StandingsPage({
   }
 
   return (
-    <main className="min-h-screen bg-[#0B0E14] px-4 py-8 text-white sm:px-8 sm:py-12">
+    <main className="min-h-screen bg-[#090a0e] px-4 py-6 text-white sm:px-8 sm:py-9">
       <div className="mx-auto max-w-6xl">
         <header className="mb-7 border-b border-white/10 pb-7 sm:mb-9 sm:pb-8">
           <Link
@@ -326,7 +326,7 @@ export default async function StandingsPage({
         )}
 
         {standings.races === 0 ? (
-          <section className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
+          <section className="rounded-2xl border border-white/10 bg-[#111217] px-6 py-12 text-center">
             <h2 className="text-xl font-semibold">
               Todavía no hay resultados para mostrar
             </h2>

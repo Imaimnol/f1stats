@@ -41,7 +41,7 @@ export default function LoginForm() {
           Email
         </label>
         <input
-          className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none transition focus:border-red-400"
+          className="w-full rounded-xl border border-white/10 bg-[#090a0e] px-4 py-3 text-white outline-none transition focus:border-red-400"
           id="email"
           name="email"
           required
@@ -54,7 +54,7 @@ export default function LoginForm() {
           Contraseña
         </label>
         <input
-          className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none transition focus:border-red-400"
+          className="w-full rounded-xl border border-white/10 bg-[#090a0e] px-4 py-3 text-white outline-none transition focus:border-red-400"
           id="password"
           minLength={6}
           name="password"

@@ -55,9 +55,9 @@ export default async function RaceResultsPage({
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14">
-      <div className="mx-auto max-w-5xl">
-        <header className="mb-10 border-b border-white/10 pb-8 sm:mb-12 sm:pb-10">
+    <main className="min-h-screen bg-[#090a0e] px-4 py-6 text-white sm:px-8 sm:py-9">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-8 border-b border-white/10 pb-8">
           <Link
             href={`/estadisticas?year=${race.season}`}
             className="text-sm font-semibold text-red-300 transition-colors hover:text-red-200"
@@ -68,7 +68,7 @@ export default async function RaceResultsPage({
             <p className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-red-400">
               F1 Stats · Ronda {race.round}
             </p>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
               {race.name}
             </h1>
             <p className="mt-3 text-base leading-7 text-slate-300">
@@ -81,7 +81,7 @@ export default async function RaceResultsPage({
           </div>
         </header>
 
-        <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
+        <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#111217]">
           <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
             <h2 className="text-lg font-semibold">Clasificación</h2>
             <p className="text-sm text-slate-400">

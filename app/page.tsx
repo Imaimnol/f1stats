@@ -14,6 +14,7 @@ import { getCircuitLayout } from "@/lib/services/circuit-layout";
 import HomeMenu from "@/app/home-menu";
 import Countdown from "@/app/countdown";
 import RaceCircuit from "@/app/race-circuit";
+import TeamMark from "@/app/team-mark";
 
 const pointsFormatter = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 2,
@@ -78,13 +79,15 @@ function StandingsPanel({
                   <td className="px-3 py-3.5">
                     {driverLinks ? (
                       <Link
-                        className="font-semibold text-white transition-colors hover:text-red-200"
+                        className="inline-flex items-center gap-2 font-semibold text-white transition-colors hover:text-red-200"
                         href={`/pilotos/${row.id}`}
                       >
+                        <TeamMark size="sm" team={row.teamName} />
                         {row.name}
                       </Link>
                     ) : (
-                      <span className="font-semibold text-white">
+                      <span className="inline-flex items-center gap-2 font-semibold text-white">
+                        <TeamMark size="sm" team={row.name} />
                         {row.name}
                       </span>
                     )}
@@ -212,7 +215,7 @@ export default async function Home() {
                 Temporada {season}
               </span>
               <span className="mt-0.5 block text-lg font-bold tracking-tight sm:text-xl">
-                F1 Live Dashboard
+                F1 Stats
               </span>
             </span>
           </Link>

@@ -37,15 +37,15 @@ function DriverProfileLoading() {
   return (
     <main
       aria-label="Cargando perfil del corredor"
-      className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14"
+      className="min-h-screen bg-[#090a0e] px-4 py-6 text-white sm:px-8 sm:py-9"
     >
       <div className="mx-auto max-w-5xl animate-pulse">
         <div className="h-5 w-40 rounded bg-white/10" />
-        <div className="mt-8 h-72 rounded-3xl bg-white/[0.04]" />
+        <div className="mt-8 h-72 rounded-2xl bg-[#111217]" />
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }, (_, index) => (
             <div
-              className="h-24 rounded-2xl bg-white/[0.04]"
+              className="h-24 rounded-2xl bg-[#111217]"
               key={index}
             />
           ))}
@@ -157,7 +157,7 @@ async function DriverProfileContent({
   ];
 
   return (
-    <main className="relative min-h-screen isolate bg-slate-950 px-5 py-10 text-white sm:px-8 sm:py-14">
+    <main className="relative isolate min-h-screen bg-[#090a0e] px-4 py-6 text-white sm:px-8 sm:py-9">
       {carImageUrl && (
         <div
           aria-hidden="true"
@@ -174,7 +174,7 @@ async function DriverProfileContent({
           <div className="absolute inset-0 bg-gradient-to-b from-slate-950/45 via-slate-950/75 to-slate-950" />
         </div>
       )}
-      <div className="relative z-10 mx-auto max-w-5xl">
+      <div className="relative z-10 mx-auto max-w-6xl">
         <Link
           href={`/corredores?year=${season}`}
           className="text-sm font-semibold text-red-300 transition-colors hover:text-red-200"
@@ -209,7 +209,7 @@ async function DriverProfileContent({
                   Perfil de corredor · {season}
                 </p>
                 <h1
-                  className="mt-4 text-4xl font-black tracking-tight sm:text-6xl"
+                  className="mt-4 text-3xl font-black tracking-tight sm:text-4xl"
                   style={{ color: driver.teamColor }}
                 >
                   {driver.lastName}
@@ -219,7 +219,7 @@ async function DriverProfileContent({
                 </p>
               </div>
               <p
-                className="text-5xl font-black sm:text-7xl"
+                className="text-4xl font-black sm:text-6xl"
                 style={{ color: driver.teamColor }}
               >
                 {driver.number}
@@ -274,7 +274,7 @@ async function DriverProfileContent({
         >
           {stats.map((stat) => (
             <div
-              className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"
+              className="rounded-2xl border border-white/10 bg-[#111217] p-4"
               key={stat.label}
             >
               <p className="text-xs font-medium text-slate-400">{stat.label}</p>
@@ -284,7 +284,7 @@ async function DriverProfileContent({
         </section>
 
         {results.length === 0 ? (
-          <section className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+          <section className="mt-8 rounded-2xl border border-white/10 bg-[#111217] p-6">
             <h2 className="text-lg font-semibold">
               Todavía no hay resultados importados
             </h2>
@@ -294,7 +294,7 @@ async function DriverProfileContent({
             </p>
           </section>
         ) : (
-          <section className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
+          <section className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-[#111217]">
             <div className="border-b border-white/10 px-5 py-4">
               <h2 className="text-lg font-semibold">Resultados de carrera</h2>
               <p className="mt-1 text-sm text-slate-400">
