@@ -36,7 +36,10 @@ export async function POST(request: Request) {
     : null;
 
   if (displayName.length > 32 || bio.length > 160) {
-    return NextResponse.redirect(new URL("/perfil?error=length", request.url));
+    return NextResponse.redirect(
+      new URL("/perfil?error=length", request.url),
+      303
+    );
   }
 
   const isExistingTeamAvatar = teamAvatarId
@@ -52,7 +55,10 @@ export async function POST(request: Request) {
     !allowedAccents.has(profileAccent) ||
     (!allowedAvatars.has(profileAvatar) && !isExistingTeamAvatar)
   ) {
-    return NextResponse.redirect(new URL("/perfil?error=invalid", request.url));
+    return NextResponse.redirect(
+      new URL("/perfil?error=invalid", request.url),
+      303
+    );
   }
 
   await prisma.user.update({
@@ -66,5 +72,8 @@ export async function POST(request: Request) {
     select: { id: true },
   });
 
-  return NextResponse.redirect(new URL("/perfil?updated=1", request.url));
+  return NextResponse.redirect(
+    new URL("/perfil?updated=1", request.url),
+    303
+  );
 }

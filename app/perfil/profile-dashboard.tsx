@@ -423,7 +423,7 @@ export default function ProfileDashboard({
         <div className="mt-8 border-b border-white/10">
           <div
             aria-label="Secciones del perfil"
-            className="flex gap-5 overflow-x-auto"
+            className="flex flex-wrap gap-x-5 gap-y-2"
             role="tablist"
           >
             {[
