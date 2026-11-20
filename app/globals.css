@@ -7,6 +7,10 @@
   --surface-border: rgb(255 255 255 / 10%);
 }
 
+html {
+  overflow-x: clip;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

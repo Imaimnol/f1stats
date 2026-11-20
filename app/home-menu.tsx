@@ -85,7 +85,7 @@ export default function HomeMenu({
         createPortal(
           <div
             aria-hidden={!isOpen}
-            className={`fixed inset-0 z-[100] ${
+            className={`fixed inset-0 z-[100] overflow-hidden ${
               isOpen ? "" : "pointer-events-none"
             }`}
             id="home-navigation-drawer"
