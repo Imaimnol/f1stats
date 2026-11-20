@@ -186,26 +186,11 @@ async function EscuderiasContent() {
                   <TeamMark size="md" team={team.name} />
                 </span>
               </div>
-              <div
-                className="relative isolate overflow-hidden"
-                style={{ backgroundColor: team.color }}
-              >
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-0 opacity-30"
-                  style={{
-                    backgroundImage: `radial-gradient(${team.color} 1px, transparent 1.5px)`,
-                    backgroundSize: "5px 5px",
-                  }}
-                />
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-white/10"
-                />
+              <div className="relative overflow-hidden bg-slate-100">
                 <div className="relative h-44 sm:h-48">
                   <Image
                     alt={`Auto de ${team.name}, temporada ${season}`}
-                    className="object-contain object-center mix-blend-multiply"
+                    className="object-contain object-center"
                     fill
                     loading={index < 2 ? "eager" : "lazy"}
                     sizes="(max-width: 640px) 100vw, 50vw"
