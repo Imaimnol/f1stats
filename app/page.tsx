@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
 import {
   getSeasonRaceCalendar,
   refreshCompletedSeasonResults,
@@ -11,7 +10,6 @@ import {
 } from "@/lib/services/race-results";
 import { getSeasonStandings } from "@/lib/services/standings";
 import { getCircuitLayout } from "@/lib/services/circuit-layout";
-import HomeMenu from "@/app/home-menu";
 import Countdown from "@/app/countdown";
 import RaceCircuit from "@/app/race-circuit";
 import TeamMark from "@/app/team-mark";
@@ -136,8 +134,7 @@ export default async function Home() {
         : "No se pudieron actualizar los resultados de la temporada.";
   }
 
-  const [currentUser, standings, calendarResponse] = await Promise.all([
-    getCurrentUser(),
+  const [standings, calendarResponse] = await Promise.all([
     getSeasonStandings(season),
     getSeasonRaceCalendar(season)
       .then((calendar) => ({ calendar, error: null }))
@@ -204,29 +201,6 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-[#090a0e] text-white">
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#090a0e]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-8">
-          <Link className="flex items-center gap-3" href="/">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-red-500 text-sm font-black italic text-white shadow-lg shadow-red-950/40">
-              F1
-            </span>
-            <span>
-              <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                Temporada {season}
-              </span>
-              <span className="mt-0.5 block text-lg font-bold tracking-tight sm:text-xl">
-                F1 Stats
-              </span>
-            </span>
-          </Link>
-          <HomeMenu
-            currentUser={
-              currentUser ? { username: currentUser.username } : null
-            }
-          />
-        </div>
-      </header>
-
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-9">
         {loadErrors.length > 0 && (
           <p
