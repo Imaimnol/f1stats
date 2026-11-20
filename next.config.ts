@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       new URL("https://media.formula1.com/**"),
+      new URL("https://thumb.wikimedia.org/wikipedia/commons/**"),
+      new URL("https://upload.wikimedia.org/wikipedia/commons/**"),
       new URL(
         "https://raw.githubusercontent.com/TracingInsights/2026/94375503dc8e724e7eaae95fe3ca365da238a5dd/images/cars/**"
       ),
