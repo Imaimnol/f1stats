@@ -54,15 +54,8 @@ type PredictionRow = {
   perfect: boolean;
   predictedPodium: string[];
   actualPodium: string[];
-};
-
-type Achievement = {
-  title: string;
-  description: string;
-  progress: number;
-  goal: number;
-  icon: "flag" | "sliders" | "trophy" | "medal";
-  color: "red" | "cyan" | "amber" | "violet";
+  exactPositions: number;
+  evaluatedPositions: number;
 };
 
 type ProfileDashboardProps = {
@@ -78,18 +71,19 @@ type ProfileDashboardProps = {
     perfect: number;
     preferences: number;
     points: number;
+    exactPicks: number;
+    evaluatedPicks: number;
   };
-  achievements: Achievement[];
   predictions: PredictionRow[];
   query: { updated?: string; favorites?: string; error?: string };
 };
 
 const avatarOptions = [
-  { value: "🏎️", icon: "user" as const, label: "Piloto" },
-  { value: "🏁", icon: "flag" as const, label: "Bandera" },
-  { value: "🏆", icon: "trophy" as const, label: "Trofeo" },
-  { value: "⚡", icon: "bolt" as const, label: "Rayo" },
-  { value: "🔥", icon: "heart" as const, label: "Fuego" },
+  { value: "car", legacyValue: "🏎️", icon: "user" as const, label: "Piloto" },
+  { value: "flag", legacyValue: "🏁", icon: "flag" as const, label: "Bandera" },
+  { value: "trophy", legacyValue: "🏆", icon: "trophy" as const, label: "Trofeo" },
+  { value: "bolt", legacyValue: "⚡", icon: "bolt" as const, label: "Rayo" },
+  { value: "flame", legacyValue: "🔥", icon: "heart" as const, label: "Fuego" },
 ];
 
 const teamColors: Array<[string, string]> = [
@@ -111,36 +105,6 @@ const accentOptions = [
   { value: "cyan", color: "#22d3ee", label: "Cian" },
   { value: "lime", color: "#a3e635", label: "Verde" },
   { value: "violet", color: "#a78bfa", label: "Violeta" },
-];
-
-const achievementColors = {
-  red: {
-    border: "border-red-400/30",
-    icon: "bg-red-500/15 text-red-300",
-    progress: "bg-red-400",
-  },
-  cyan: {
-    border: "border-cyan-300/30",
-    icon: "bg-cyan-400/15 text-cyan-200",
-    progress: "bg-cyan-300",
-  },
-  amber: {
-    border: "border-amber-300/30",
-    icon: "bg-amber-400/15 text-amber-200",
-    progress: "bg-amber-300",
-  },
-  violet: {
-    border: "border-violet-300/30",
-    icon: "bg-violet-400/15 text-violet-200",
-    progress: "bg-violet-300",
-  },
-};
-
-const rankLevels = [
-  { name: "Rookie", start: 0, target: 5 },
-  { name: "Piloto titular", start: 5, target: 15 },
-  { name: "Candidato al podio", start: 15, target: 30 },
-  { name: "Leyenda del paddock", start: 30, target: 50 },
 ];
 
 function Icon({
@@ -228,18 +192,6 @@ function driverName(driver: DriverOption | null) {
   return driver ? `${driver.firstName} ${driver.lastName}` : "Elegí tu piloto";
 }
 
-function getRank(predictions: number) {
-  const level =
-    [...rankLevels].reverse().find((item) => predictions >= item.start) ??
-    rankLevels[0];
-  const progress = Math.min(
-    100,
-    Math.round(((predictions - level.start) / (level.target - level.start)) * 100)
-  );
-
-  return { ...level, progress };
-}
-
 function getTeamColor(name: string) {
   const normalizedName = name.toLowerCase();
   return (
@@ -293,7 +245,6 @@ export default function ProfileDashboard({
   profile,
   options,
   stats,
-  achievements,
   predictions,
   query,
 }: ProfileDashboardProps) {
@@ -301,11 +252,13 @@ export default function ProfileDashboard({
     query.favorites === "1" || query.error === "favorite" ? "favorites" : "summary"
   );
   const [editing, setEditing] = useState(false);
-  const rank = getRank(stats.predictions);
   const displayName = profile.displayName || profile.username;
   const heroColor = profile.favoriteTeamColor || profile.accentColor;
+  const accuracy = stats.evaluatedPicks
+    ? Math.round((stats.exactPicks / stats.evaluatedPicks) * 100)
+    : 0;
   const selectedAvatar = avatarOptions.find(
-    (option) => option.value === profile.avatar
+    (option) => option.value === profile.avatar || option.legacyValue === profile.avatar
   );
   const selectedAvatarTeam = profile.avatar.startsWith("team:")
     ? options.teams.find((team) => `team:${team.id}` === profile.avatar)
@@ -410,38 +363,6 @@ export default function ProfileDashboard({
             </div>
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center md:justify-end">
-              <div className="min-w-52 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs text-slate-400">Rango del paddock</p>
-                    <p className="mt-1 font-semibold text-white">{rank.name}</p>
-                  </div>
-                  <span className="font-mono text-sm tabular-nums text-slate-300">
-                    {stats.predictions} XP
-                  </span>
-                </div>
-                <div
-                  aria-label={`${rank.progress}% de progreso al siguiente rango`}
-                  className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"
-                  role="progressbar"
-                  aria-valuemax={100}
-                  aria-valuemin={0}
-                  aria-valuenow={rank.progress}
-                >
-                  <div
-                    className="h-full rounded-full transition-[width]"
-                    style={{
-                      width: `${rank.progress}%`,
-                      backgroundColor: heroColor,
-                    }}
-                  />
-                </div>
-                <p className="mt-1.5 text-right text-xs text-slate-400">
-                  {stats.predictions >= rank.target
-                    ? "Rango máximo"
-                    : `${Math.max(0, rank.target - stats.predictions)} XP para el próximo`}
-                </p>
-              </div>
               <div className="flex gap-2">
                 <button
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 px-4 text-sm font-semibold text-white transition hover:bg-white/10"
@@ -506,7 +427,7 @@ export default function ProfileDashboard({
             role="tablist"
           >
             {[
-              { id: "summary", label: "Resumen e insignias" },
+              { id: "summary", label: "Resumen de temporada" },
               { id: "history", label: "Historial de pronósticos" },
               { id: "favorites", label: "Favoritos" },
             ].map((tab) => (
@@ -541,92 +462,105 @@ export default function ProfileDashboard({
         >
           {activeTab === "summary" && (
             <div>
-              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <h2 className="text-xl font-bold">Insignias del paddock</h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    Tus logros y el progreso de cada desafío.
-                  </p>
-                </div>
-                <p className="text-sm text-slate-300">
-                  {achievements.filter((item) => item.progress >= item.goal).length}
-                  <span className="text-slate-500"> / {achievements.length} desbloqueadas</span>
+              <div className="mb-4">
+                <h2 className="text-xl font-bold">Tu temporada en pista</h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  Un repaso de tus pronósticos frente a los resultados oficiales.
                 </p>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {achievements.map((achievement) => {
-                  const unlocked = achievement.progress >= achievement.goal;
-                  const color = achievementColors[achievement.color];
-                  const progress = Math.min(
-                    100,
-                    Math.round((achievement.progress / achievement.goal) * 100)
-                  );
-
-                  return (
-                    <article
-                      className={`rounded-2xl border bg-[#111217] p-4 transition ${
-                        unlocked
-                          ? `${color.border} shadow-[0_0_30px_-24px_rgba(255,255,255,0.6)]`
-                          : "border-white/10 opacity-60 grayscale"
-                      }`}
-                      key={achievement.title}
+              <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+                <article className="rounded-2xl border border-white/10 bg-[#111217] p-5 sm:p-6">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Precisión de podio
+                  </p>
+                  <p className="mt-3 font-mono text-4xl font-bold tabular-nums text-white">
+                    {stats.evaluatedPicks
+                      ? `${accuracy}%`
+                      : "—"}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-300">
+                    {stats.exactPicks} puestos acertados de {stats.evaluatedPicks} evaluados
+                  </p>
+                  <div
+                    aria-label={`${accuracy}% de acierto en puestos de podio`}
+                    className="mt-5 h-2 overflow-hidden rounded-full bg-white/10"
+                    role="progressbar"
+                    aria-valuemax={100}
+                    aria-valuemin={0}
+                    aria-valuenow={accuracy}
+                  >
+                    <div
+                      className="h-full rounded-full bg-red-500 transition-[width]"
+                      style={{ width: `${accuracy}%` }}
+                    />
+                  </div>
+                  <div className="mt-6 grid grid-cols-2 gap-3 border-t border-white/10 pt-4">
+                    <div>
+                      <p className="font-mono text-2xl font-bold text-white">{stats.perfect}</p>
+                      <p className="text-xs text-slate-400">Podios perfectos</p>
+                    </div>
+                    <div>
+                      <p className="font-mono text-2xl font-bold text-white">{stats.points}</p>
+                      <p className="text-xs text-slate-400">Puntos sumados</p>
+                    </div>
+                  </div>
+                </article>
+                <article className="rounded-2xl border border-white/10 bg-[#111217] p-5 sm:p-6">
+                  <div className="flex flex-wrap items-end justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        Últimos Grandes Premios
+                      </p>
+                      <h3 className="mt-1 text-lg font-bold text-white">
+                        {predictions.some((prediction) => prediction.hasResult)
+                          ? "Tu ritmo reciente"
+                          : "Todavía no hay resultados"}
+                      </h3>
+                    </div>
+                    <button
+                      className="text-sm font-semibold text-slate-300 transition hover:text-white"
+                      onClick={() => setActiveTab("history")}
+                      type="button"
                     >
-                      <div className="flex gap-3">
-                        <div
-                          className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl ${
-                            unlocked ? color.icon : "bg-white/5 text-slate-400"
-                          }`}
-                        >
-                          <Icon className="h-6 w-6" name={achievement.icon} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-semibold text-white">
-                              {achievement.title}
-                            </h3>
-                            <span
-                              className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${
-                                unlocked
-                                  ? "bg-emerald-400/10 text-emerald-200"
-                                  : "bg-white/5 text-slate-400"
-                              }`}
-                            >
-                              <Icon
-                                className="h-3 w-3"
-                                name={unlocked ? "check" : "lock"}
-                              />
-                              {unlocked ? "Obtenida" : "Bloqueada"}
-                            </span>
-                          </div>
-                          <p className="mt-1 text-sm text-slate-300">
-                            {achievement.description}
-                          </p>
-                          <div className="mt-4 flex items-center gap-3">
-                            <div
-                              aria-label={`${progress}% completado`}
-                              className="h-2 flex-1 overflow-hidden rounded-full bg-white/10"
-                            >
-                              <div
-                                className={`h-full rounded-full ${
-                                  unlocked ? color.progress : "bg-slate-500"
-                                }`}
-                                style={{ width: `${progress}%` }}
-                              />
+                      Ver historial →
+                    </button>
+                  </div>
+                  {predictions.filter((prediction) => prediction.hasResult).length ? (
+                    <div className="mt-4 divide-y divide-white/[0.07]">
+                      {predictions
+                        .filter((prediction) => prediction.hasResult)
+                        .slice(0, 4)
+                        .map((prediction) => (
+                          <div
+                            className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
+                            key={prediction.id}
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold text-white">
+                                {prediction.race}
+                              </p>
+                              <p className="mt-1 text-xs text-slate-400">
+                                {prediction.exactPositions}/3 puestos acertados
+                              </p>
                             </div>
-                            <span className="min-w-12 text-right font-mono text-xs tabular-nums text-slate-200">
-                              {achievement.progress}/{achievement.goal} · {progress}%
+                            <span className="shrink-0 rounded-lg bg-white/5 px-3 py-2 font-mono text-sm font-bold tabular-nums text-white">
+                              +{prediction.points} pts
                             </span>
                           </div>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="mt-4 text-sm leading-6 text-slate-300">
+                      Cuando se publiquen resultados de tus pronósticos, vas a ver acá
+                      cómo te fue en cada fecha.
+                    </p>
+                  )}
+                </article>
               </div>
               <div className="mt-6 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-[#111217] px-5 py-4 text-sm">
                 <span className="text-slate-300">Miembro desde {profile.createdAt}</span>
                 <span className="font-mono tabular-nums text-slate-300">
-                  {stats.preferences}/3 preferencias configuradas
+                  {stats.preferences}/3 favoritos configurados
                 </span>
               </div>
             </div>
@@ -898,7 +832,10 @@ export default function ProfileDashboard({
                     <label className="cursor-pointer" key={option.value}>
                       <input
                         className="peer sr-only"
-                        defaultChecked={profile.avatar === option.value}
+                        defaultChecked={
+                          profile.avatar === option.value ||
+                          profile.avatar === option.legacyValue
+                        }
                         name="profileAvatar"
                         type="radio"
                         value={option.value}

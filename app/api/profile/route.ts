@@ -4,7 +4,14 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const allowedAccents = new Set(["red", "cyan", "lime", "violet"]);
-const allowedAvatars = new Set(["🏎️", "🏁", "🏆", "⚡", "🔥"]);
+const avatarValues = {
+  car: "🏎️",
+  flag: "🏁",
+  trophy: "🏆",
+  bolt: "⚡",
+  flame: "🔥",
+} as const;
+const allowedAvatars = new Set<string>(Object.values(avatarValues));
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -20,7 +27,10 @@ export async function POST(request: Request) {
   const displayName = String(formData.get("displayName") ?? "").trim();
   const bio = String(formData.get("bio") ?? "").trim();
   const profileAccent = String(formData.get("profileAccent") ?? "");
-  const profileAvatar = String(formData.get("profileAvatar") ?? "");
+  const submittedAvatar = String(formData.get("profileAvatar") ?? "");
+  const profileAvatar =
+    Object.entries(avatarValues).find(([key]) => key === submittedAvatar)?.[1] ??
+    submittedAvatar;
   const teamAvatarId = profileAvatar.startsWith("team:")
     ? profileAvatar.slice("team:".length)
     : null;

@@ -185,6 +185,8 @@ export default async function PerfilPage({
           .filter(Boolean)
           .join(" ")
       ),
+      exactPositions,
+      evaluatedPositions: actualPodium.length,
     };
   });
   const completedPredictions = scoredPredictions.filter(
@@ -197,41 +199,14 @@ export default async function PerfilPage({
     (total, prediction) => total + prediction.points,
     0
   );
-  const achievements = [
-    {
-      title: "Primer pronóstico",
-      description: "Guarda tu primer podio.",
-      progress: Math.min(predictions.length, 1),
-      goal: 1,
-      icon: "flag" as const,
-      color: "red" as const,
-    },
-    {
-      title: "Estratega",
-      description: "Participa en cinco pronósticos.",
-      progress: Math.min(predictions.length, 5),
-      goal: 5,
-      icon: "sliders" as const,
-      color: "cyan" as const,
-    },
-    {
-      title: "Podio perfecto",
-      description: "Acierta los tres puestos en orden.",
-      progress: Math.min(perfectPodiums, 1),
-      goal: 1,
-      icon: "trophy" as const,
-      color: "amber" as const,
-    },
-    {
-      title: "Fan de paddock",
-      description: "Elige piloto, equipo y circuito favoritos.",
-      progress: favoriteCount,
-      goal: 3,
-      icon: "medal" as const,
-      color: "violet" as const,
-    },
-  ];
-
+  const exactPicks = scoredPredictions.reduce(
+    (total, prediction) => total + (prediction.hasResult ? prediction.exactPositions : 0),
+    0
+  );
+  const evaluatedPicks = scoredPredictions.reduce(
+    (total, prediction) => total + prediction.evaluatedPositions,
+    0
+  );
   const favoriteTeamColor = profileUser.favoriteTeam
     ? Object.entries(teamColors).find(([name]) =>
         profileUser.favoriteTeam!.name.toLowerCase().includes(name)
@@ -261,8 +236,9 @@ export default async function PerfilPage({
         perfect: perfectPodiums,
         preferences: favoriteCount,
         points: totalPredictionPoints,
+        exactPicks,
+        evaluatedPicks,
       }}
-      achievements={achievements}
       predictions={scoredPredictions}
       query={query}
     />
