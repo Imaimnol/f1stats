@@ -134,7 +134,7 @@ export default function HomeMenu({
                   { href: "/constructores", label: "Constructores" },
                   { href: "/ranking", label: "Ranking" },
                   { href: "/corredores", label: "Corredores" },
-                  { href: "/equipos", label: "Equipos" },
+                  { href: "/escuderias", label: "Escuderías" },
                   { href: "/campeones", label: "Campeones" },
                   { href: "/prediccion", label: "Mi predicción" },
                 ].map((item) => (

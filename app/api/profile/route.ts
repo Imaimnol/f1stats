@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { teamLogos } from "@/lib/team-logos";
 
 const allowedAccents = new Set(["red", "cyan", "lime", "violet"]);
 const avatarValues = {
@@ -50,10 +51,15 @@ export async function POST(request: Request) {
         })
       )
     : false;
+  const isTeamLogoAvatar = teamLogos.some(
+    (team) => profileAvatar === `team-logo:${team.slug}`
+  );
 
   if (
     !allowedAccents.has(profileAccent) ||
-    (!allowedAvatars.has(profileAvatar) && !isExistingTeamAvatar)
+    (!allowedAvatars.has(profileAvatar) &&
+      !isExistingTeamAvatar &&
+      !isTeamLogoAvatar)
   ) {
     return NextResponse.redirect(
       new URL("/perfil?error=invalid", request.url),

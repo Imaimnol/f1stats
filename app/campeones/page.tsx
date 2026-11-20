@@ -35,7 +35,7 @@ export default function ChampionsPage() {
               <div className="relative aspect-[16/10] bg-slate-900">
                 <Image
                   alt={champion.name}
-                  className="object-cover"
+                  className="object-contain object-center"
                   fill
                   loading={index < 3 ? "eager" : "lazy"}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

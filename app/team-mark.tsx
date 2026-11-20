@@ -1,32 +1,20 @@
 import Image from "next/image";
 
-const teams: Array<[string, string]> = [
-  ["alpine", "alpine"],
-  ["aston martin", "aston-martin"],
-  ["audi", "audi"],
-  ["cadillac", "cadillac"],
-  ["ferrari", "ferrari"],
-  ["haas", "haas"],
-  ["mclaren", "mclaren"],
-  ["mercedes", "mercedes"],
-  ["racing bulls", "racing-bulls"],
-  ["red bull", "red-bull"],
-  ["williams", "williams"],
-];
+import { findTeamLogo } from "@/lib/team-logos";
 
 export default function TeamMark({
   team,
   size = "sm",
 }: {
   team: string | null | undefined;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
 }) {
   if (!team) {
     return null;
   }
 
   const normalizedName = team.toLowerCase();
-  const teamLogo = teams.find(([name]) => normalizedName.includes(name));
+  const teamLogo = findTeamLogo(normalizedName);
 
   if (!teamLogo) {
     return (
@@ -40,16 +28,15 @@ export default function TeamMark({
     );
   }
 
-  const [, logoName] = teamLogo;
-  const dimensions = size === "md" ? 40 : 32;
-  const logoColor = logoName === "mercedes" ? "brightness-0 invert" : "";
+  const dimensions = size === "lg" ? 56 : size === "md" ? 40 : 32;
+  const logoColor = teamLogo.slug === "mercedes" ? "brightness-0 invert" : "";
 
   return (
     <Image
       alt={`${team} logo`}
       className={`shrink-0 object-contain ${logoColor}`}
       height={dimensions}
-      src={`/team-logos/${logoName}.webp`}
+      src={`/team-logos/${teamLogo.slug}.webp`}
       width={dimensions}
     />
   );

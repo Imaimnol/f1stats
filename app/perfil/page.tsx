@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { findTeamLogo, teamLogos } from "@/lib/team-logos";
 import ProfileDashboard from "./profile-dashboard";
 
 const avatars = ["🏎️", "🏁", "🏆", "⚡", "🔥"];
@@ -11,20 +12,6 @@ const accents = {
   lime: "#a3e635",
   violet: "#a78bfa",
 } as const;
-
-const teamColors: Record<string, string> = {
-  alpine: "#ff87bc",
-  "aston martin": "#00a19c",
-  audi: "#c7c7c7",
-  cadillac: "#d8b15c",
-  ferrari: "#e8002d",
-  haas: "#ffffff",
-  mclaren: "#ff8000",
-  mercedes: "#27f4d2",
-  "racing bulls": "#6692ff",
-  "red bull": "#3671c6",
-  williams: "#64c4ff",
-};
 
 const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   day: "numeric",
@@ -133,8 +120,13 @@ export default async function PerfilPage({
     teams.some(
       (team) => `team:${team.id}` === profileUser.profileAvatar
     );
+  const isTeamLogoAvatar = teamLogos.some(
+    (team) => `team-logo:${team.slug}` === profileUser.profileAvatar
+  );
   const selectedAvatar =
-    avatars.includes(profileUser.profileAvatar) || isTeamAvatar
+    avatars.includes(profileUser.profileAvatar) ||
+    isTeamAvatar ||
+    isTeamLogoAvatar
       ? profileUser.profileAvatar
       : avatars[0];
   const favoriteCount = [
@@ -208,9 +200,7 @@ export default async function PerfilPage({
     0
   );
   const favoriteTeamColor = profileUser.favoriteTeam
-    ? Object.entries(teamColors).find(([name]) =>
-        profileUser.favoriteTeam!.name.toLowerCase().includes(name)
-      )?.[1]
+    ? findTeamLogo(profileUser.favoriteTeam.name)?.color
     : undefined;
 
   return (

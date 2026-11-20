@@ -3,6 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 
+import TeamMark from "@/app/team-mark";
+import { findTeamLogo, teamLogos } from "@/lib/team-logos";
+
 type IconName =
   | "bolt"
   | "calendar"
@@ -84,20 +87,6 @@ const avatarOptions = [
   { value: "trophy", legacyValue: "🏆", icon: "trophy" as const, label: "Trofeo" },
   { value: "bolt", legacyValue: "⚡", icon: "bolt" as const, label: "Rayo" },
   { value: "flame", legacyValue: "🔥", icon: "heart" as const, label: "Fuego" },
-];
-
-const teamColors: Array<[string, string]> = [
-  ["alpine", "#ff87bc"],
-  ["aston martin", "#00a19c"],
-  ["audi", "#c7c7c7"],
-  ["cadillac", "#d8b15c"],
-  ["ferrari", "#e8002d"],
-  ["haas", "#ffffff"],
-  ["mclaren", "#ff8000"],
-  ["mercedes", "#27f4d2"],
-  ["racing bulls", "#6692ff"],
-  ["red bull", "#3671c6"],
-  ["williams", "#64c4ff"],
 ];
 
 const accentOptions = [
@@ -192,53 +181,14 @@ function driverName(driver: DriverOption | null) {
   return driver ? `${driver.firstName} ${driver.lastName}` : "Elegí tu piloto";
 }
 
-function getTeamColor(name: string) {
-  const normalizedName = name.toLowerCase();
-  return (
-    teamColors.find(([team]) => normalizedName.includes(team))?.[1] ?? "#94a3b8"
-  );
-}
-
-function getTeamInitials(name: string) {
-  const words = name
-    .replace(/[^a-zA-Z0-9 ]/g, " ")
-    .trim()
-    .split(/\s+/);
-  return words.length > 1
-    ? words.map((word) => word[0]).join("").slice(0, 3).toUpperCase()
-    : name.slice(0, 3).toUpperCase();
-}
-
-function TeamAvatar({ name }: { name: string }) {
-  const color = getTeamColor(name);
-
-  return (
-    <svg
-      aria-hidden="true"
-      className="h-10 w-10"
-      fill="none"
-      viewBox="0 0 40 40"
-    >
-      <path
-        d="M20 2.5 35 8v11.2c0 8.3-5.8 14.8-15 18.3C10.8 34 5 27.5 5 19.2V8L20 2.5Z"
-        fill={`${color}22`}
-        stroke={color}
-        strokeWidth="2"
-      />
-      <text
-        dominantBaseline="central"
-        fill="white"
-        fontFamily="Arial, sans-serif"
-        fontSize="11"
-        fontWeight="700"
-        textAnchor="middle"
-        x="20"
-        y="20"
-      >
-        {getTeamInitials(name)}
-      </text>
-    </svg>
-  );
+function TeamAvatar({
+  name,
+  size = "md",
+}: {
+  name: string;
+  size?: "md" | "lg";
+}) {
+  return <TeamMark size={size} team={name} />;
 }
 
 export default function ProfileDashboard({
@@ -262,6 +212,14 @@ export default function ProfileDashboard({
   );
   const selectedAvatarTeam = profile.avatar.startsWith("team:")
     ? options.teams.find((team) => `team:${team.id}` === profile.avatar)
+    : undefined;
+  const selectedAvatarTeamLogo = teamLogos.find(
+    (team) => `team-logo:${team.slug}` === profile.avatar
+  );
+  const selectedAvatarTeamName =
+    selectedAvatarTeamLogo?.name ?? selectedAvatarTeam?.name;
+  const legacyAvatarTeamSlug = selectedAvatarTeam
+    ? findTeamLogo(selectedAvatarTeam.name)?.slug
     : undefined;
 
   const kpis = [
@@ -336,8 +294,8 @@ export default function ProfileDashboard({
                 style={{ boxShadow: `0 0 30px -14px ${heroColor}` }}
                 type="button"
               >
-                {selectedAvatarTeam ? (
-                  <TeamAvatar name={selectedAvatarTeam.name} />
+                {selectedAvatarTeamName ? (
+                  <TeamAvatar name={selectedAvatarTeamName} size="lg" />
                 ) : (
                   <Icon
                     className="h-10 w-10 text-slate-100"
@@ -846,13 +804,16 @@ export default function ProfileDashboard({
                       <span className="sr-only">{option.label}</span>
                     </label>
                   ))}
-                  {options.teams.map((team) => {
-                    const value = `team:${team.id}`;
+                  {teamLogos.map((team) => {
+                    const value = `team-logo:${team.slug}`;
                     return (
-                      <label className="group cursor-pointer" key={team.id}>
+                      <label className="group cursor-pointer" key={team.slug}>
                         <input
                           className="peer sr-only"
-                          defaultChecked={profile.avatar === value}
+                          defaultChecked={
+                            profile.avatar === value ||
+                            legacyAvatarTeamSlug === team.slug
+                          }
                           name="profileAvatar"
                           type="radio"
                           value={value}
@@ -864,6 +825,23 @@ export default function ProfileDashboard({
                       </label>
                     );
                   })}
+                  {selectedAvatarTeam && !legacyAvatarTeamSlug && (
+                    <label className="group cursor-pointer">
+                      <input
+                        className="peer sr-only"
+                        defaultChecked
+                        name="profileAvatar"
+                        type="radio"
+                        value={`team:${selectedAvatarTeam.id}`}
+                      />
+                      <span className="grid min-h-12 min-w-12 place-items-center rounded-xl border border-white/10 bg-[#090a0e] px-1 transition peer-checked:border-cyan-300/60 peer-checked:bg-cyan-300/10 peer-focus-visible:ring-2 peer-focus-visible:ring-cyan-300">
+                        <TeamAvatar name={selectedAvatarTeam.name} />
+                      </span>
+                      <span className="sr-only">
+                        {selectedAvatarTeam.name}
+                      </span>
+                    </label>
+                  )}
                 </div>
               </fieldset>
 
