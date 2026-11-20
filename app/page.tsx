@@ -203,9 +203,9 @@ export default async function Home() {
   );
 
   return (
-    <main className="min-h-screen bg-[#090a0e] px-4 py-6 text-white sm:px-8 sm:py-9">
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-6 flex items-center justify-between gap-4 border-b border-white/10 pb-5 sm:mb-8 sm:pb-6">
+    <main className="min-h-screen bg-[#090a0e] text-white">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#090a0e]/95 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-8">
           <Link className="flex items-center gap-3" href="/">
             <span className="flex size-10 items-center justify-center rounded-xl bg-red-500 text-sm font-black italic text-white shadow-lg shadow-red-950/40">
               F1
@@ -224,8 +224,10 @@ export default async function Home() {
               currentUser ? { username: currentUser.username } : null
             }
           />
-        </header>
+        </div>
+      </header>
 
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-9">
         {loadErrors.length > 0 && (
           <p
             className="mb-5 rounded-xl border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3 text-sm text-amber-200"
